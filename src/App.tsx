@@ -653,7 +653,7 @@ export default function App() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar pb-6 mt-2 content-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar pb-6 mt-2 content-start">
             <AnimatePresence mode="popLayout">
               {log.categories.find(c => c.id === activeCategory)?.tasks
                 .slice()
@@ -682,24 +682,24 @@ export default function App() {
                           progress: newStatus === 'done' ? 100 : (task.progress === 100 ? 0 : task.progress)
                         });
                       }}
-                      className="w-8 h-8 rounded-xl mt-1.5"
+                      className="w-7 h-7 rounded-xl mt-1 sm:mt-1.5 shrink-0"
                     />
-                    <div className="flex-1 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Input
                               placeholder="任务名称..."
                               value={task.title}
                               onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
                               className={cn(
-                                "border-none bg-transparent p-0 h-auto font-black text-2xl md:text-2xl focus-visible:ring-0 font-cute",
+                                "border-none bg-transparent p-0 h-auto font-black text-xl md:text-2xl focus-visible:ring-0 font-cute w-full sm:w-auto min-w-[120px]",
                                 task.status === 'done' && "line-through opacity-30"
                               )}
                             />
                             <select
                               className={cn(
-                                "rounded-xl px-3 py-1.5 text-xs font-black outline-none border-none cursor-pointer shadow-sm appearance-none",
+                                "rounded-xl px-2 py-1 text-[10px] font-black outline-none border-none cursor-pointer shadow-sm appearance-none shrink-0",
                                 task.quadrant === 1 ? "bg-rose-100 text-rose-600" :
                                 task.quadrant === 2 ? "bg-amber-100 text-amber-600" :
                                 task.quadrant === 3 ? "bg-blue-100 text-blue-600" :
@@ -714,22 +714,23 @@ export default function App() {
                               <option value={4}>不重要不紧急</option>
                             </select>
                           </div>
-                          <div className="flex gap-8">
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             {/* Column 1: Unit Related */}
-                            <div className="w-44 space-y-4">
+                            <div className="min-w-0 space-y-3">
                               <div className="space-y-1">
-                                <div className="flex justify-between items-center text-xs font-black opacity-40">
+                                <div className="flex justify-between items-center text-[10px] font-black opacity-40">
                                   <span>单元进度 ({task.completedUnits || 0}/{task.totalUnits || 1})</span>
                                   <span>{task.totalUnits ? Math.round((task.completedUnits || 0) / task.totalUnits * 100) : 0}%</span>
                                 </div>
-                                <Progress value={task.totalUnits ? (task.completedUnits || 0) / task.totalUnits * 100 : 0} className="h-2" />
+                                <Progress value={task.totalUnits ? (task.completedUnits || 0) / task.totalUnits * 100 : 0} className="h-1.5" />
                               </div>
                               
-                              <div className="space-y-3 bg-white/30 px-3 py-2.5 rounded-2xl">
-                                <div className="flex flex-col gap-1.5">
+                              <div className="space-y-3 bg-white/30 px-3 py-2 rounded-xl">
+                                <div className="flex flex-col gap-1">
                                   <span className="text-[10px] font-black opacity-40 uppercase">单元操作</span>
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-1.5 bg-black/5 p-1 rounded-lg">
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1 bg-black/5 p-0.5 rounded-lg">
                                       <Button 
                                         size="sm" 
                                         variant="ghost" 
@@ -759,8 +760,8 @@ export default function App() {
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex flex-col gap-1.5">
-                                  <span className="text-[10px] font-black opacity-40 uppercase">开始计时</span>
+                                <div className="flex flex-col gap-1">
+                                  <span className="text-[10px] font-black opacity-40 uppercase">计时</span>
                                   <div className="flex items-center gap-2">
                                     <Button 
                                       size="sm"
@@ -772,18 +773,18 @@ export default function App() {
                                           setActiveTimer({ taskId: task.id, categoryId: activeCategory });
                                         }
                                       }}
-                                      className="h-8 px-4 text-xs font-black uppercase rounded-xl shadow-md flex-1"
+                                      className="h-7 px-3 text-[10px] font-black uppercase rounded-lg shadow-sm flex-1"
                                     >
-                                      {activeTimer?.taskId === task.id ? <Pause className="w-3.5 h-3.5 mr-1.5" /> : <Play className="w-3.5 h-3.5 mr-1.5" />}
+                                      {activeTimer?.taskId === task.id ? <Pause className="w-3 h-3 mr-1" /> : <Play className="w-3 h-3 mr-1" />}
                                       {activeTimer?.taskId === task.id ? '暂停' : '开始'}
                                     </Button>
                                     <Button 
                                       variant="ghost" 
                                       size="icon" 
                                       onClick={() => updateTask(activeCategory, task.id, { timeSpent: 0, remainingTime: (task.countdownDuration || 25) * 60 })} 
-                                      className="h-8 w-8 opacity-30 hover:opacity-100 bg-white/40 rounded-xl"
+                                      className="h-7 w-7 opacity-30 hover:opacity-100 bg-white/40 rounded-lg shrink-0"
                                     >
-                                      <RotateCcw className="w-4 h-4" />
+                                      <RotateCcw className="w-3 h-3" />
                                     </Button>
                                   </div>
                                 </div>
@@ -791,17 +792,17 @@ export default function App() {
                             </div>
 
                             {/* Column 2: Overall Progress Related */}
-                            <div className="w-44 space-y-4">
+                            <div className="min-w-0 space-y-3">
                               <div className="space-y-1">
-                                <div className="flex justify-between items-center text-xs font-black opacity-40">
+                                <div className="flex justify-between items-center text-[10px] font-black opacity-40">
                                   <span>整体进度</span>
                                   <span>{task.progress || 0}%</span>
                                 </div>
-                                <Progress value={task.progress || 0} className="h-2" />
+                                <Progress value={task.progress || 0} className="h-1.5" />
                               </div>
 
-                              <div className="space-y-3 bg-white/30 px-3 py-2.5 rounded-2xl">
-                                <div className="flex flex-col gap-1.5">
+                              <div className="space-y-3 bg-white/30 px-3 py-2 rounded-xl h-full flex flex-col justify-between">
+                                <div className="flex flex-col gap-1">
                                   <span className="text-[10px] font-black opacity-40 uppercase">进度调节</span>
                                   <Slider
                                     value={[task.progress || 0]}
@@ -817,11 +818,11 @@ export default function App() {
                                     className="w-full"
                                   />
                                 </div>
-                                <div className="flex flex-col items-center gap-1 border-t border-black/5 pt-2">
-                                  <span className="text-3xl font-mono font-black text-brand-600 tracking-tighter leading-none">
+                                <div className="flex flex-col items-center gap-0.5 border-t border-black/5 pt-1.5 mt-auto">
+                                  <span className="text-2xl font-mono font-black text-brand-600 tracking-tighter leading-none">
                                     {task.timerMode === 'down' ? formatTime(task.remainingTime || 0) : formatTime(task.timeSpent || 0)}
                                   </span>
-                                  <span className="text-[9px] font-black opacity-30 uppercase tracking-[0.2em]">
+                                  <span className="text-[7px] font-black opacity-30 uppercase tracking-[0.2em] leading-none">
                                     {task.timerMode === 'down' ? '剩余' : '累计'}
                                   </span>
                                 </div>
@@ -829,29 +830,29 @@ export default function App() {
                             </div>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => removeTask(activeCategory, task.id)} className="opacity-0 group-hover:opacity-100 w-10 h-10">
-                          <Trash2 className="w-5 h-5" />
+                        <Button variant="ghost" size="icon" onClick={() => removeTask(activeCategory, task.id)} className="opacity-0 group-hover:opacity-100 w-8 h-8 shrink-0 hover:bg-rose-50 hover:text-rose-500 rounded-lg">
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
-                      {/* Additional Options */}
-                      <div className="flex gap-4 items-center bg-black/5 px-4 py-2 rounded-xl w-fit">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black opacity-40 uppercase">模式</span>
+                      
+                      <div className="flex flex-wrap gap-2 items-center bg-black/5 px-3 py-1.5 rounded-xl w-fit">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-black opacity-40 uppercase">模式</span>
                           <Button 
                             size="sm" 
                             variant="ghost"
-                            className="h-6 px-2 text-[10px] font-black rounded-lg"
+                            className="h-5 px-1.5 text-[9px] font-black rounded-md"
                             onClick={() => updateTask(activeCategory, task.id, { timerMode: task.timerMode === 'down' ? 'up' : 'down' })}
                           >
                             {task.timerMode === 'down' ? '倒计时' : '正计时'}
                           </Button>
                         </div>
                         {task.timerMode === 'down' && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black opacity-40 uppercase">设定</span>
+                          <div className="flex items-center gap-1.5 ml-2 border-l border-black/10 pl-2">
+                            <span className="text-[9px] font-black opacity-40 uppercase">设定</span>
                             <Input 
                               type="number" 
-                              className="h-6 w-10 text-[10px] p-0 text-center bg-white/50 rounded-lg font-black border-none focus-visible:ring-0"
+                              className="h-5 w-8 text-[9px] p-0 text-center bg-white/50 rounded-md font-black border-none focus-visible:ring-0"
                               placeholder="分"
                               value={task.countdownDuration || 25}
                               onChange={(e) => {
@@ -862,7 +863,7 @@ export default function App() {
                                 });
                               }}
                             />
-                            <span className="text-[10px] font-black opacity-40">分</span>
+                            <span className="text-[9px] font-black opacity-40">分</span>
                           </div>
                         )}
                       </div>
@@ -870,10 +871,10 @@ export default function App() {
                   </div>
                 </motion.div>
               ))}
-            </AnimatePresence>
-                </div>
-              </section>
-            )}
+          </AnimatePresence>
+        </div>
+      </section>
+    )}
 
             {currentPage === 1 && (
               <>
