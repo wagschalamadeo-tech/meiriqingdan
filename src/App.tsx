@@ -644,7 +644,7 @@ export default function App() {
             )}
           </div>
 
-          <div className="space-y-6 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
+          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
             <AnimatePresence mode="popLayout">
               {log.categories.find(c => c.id === activeCategory)?.tasks.map((task, idx) => (
                 <motion.div
@@ -653,9 +653,9 @@ export default function App() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="bento-inner-card group relative p-8"
+                  className="bento-inner-card group relative p-5"
                 >
-                  <div className="flex items-start gap-6">
+                  <div className="flex items-start gap-4">
                     <Checkbox 
                       checked={task.status === 'done'} 
                       onCheckedChange={() => {
@@ -665,34 +665,34 @@ export default function App() {
                           progress: newStatus === 'done' ? 100 : (task.progress === 100 ? 0 : task.progress)
                         });
                       }}
-                      className="w-8 h-8 rounded-xl mt-1"
+                      className="w-8 h-8 rounded-xl mt-1.5"
                     />
-                    <div className="flex-1 space-y-6">
+                    <div className="flex-1 space-y-4">
                       <div className="flex justify-between items-center">
-                        <div className="flex-1 space-y-3">
+                        <div className="flex-1 space-y-2">
                           <Input
                             placeholder={`任务 ${idx + 1}...`}
                             value={task.title}
                             onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
                             className={cn(
-                              "border-none bg-transparent p-0 h-auto font-black text-3xl focus-visible:ring-0",
+                              "border-none bg-transparent p-0 h-auto font-black text-4xl focus-visible:ring-0",
                               task.status === 'done' && "line-through opacity-30"
                             )}
                           />
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pr-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pr-4">
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-xs font-black opacity-40">
                                 <span>单元进度 ({task.completedUnits || 0}/{task.totalUnits || 1})</span>
                                 <span>{task.totalUnits ? Math.round((task.completedUnits || 0) / task.totalUnits * 100) : 0}%</span>
                               </div>
-                              <Progress value={task.totalUnits ? (task.completedUnits || 0) / task.totalUnits * 100 : 0} className="h-3" />
+                              <Progress value={task.totalUnits ? (task.completedUnits || 0) / task.totalUnits * 100 : 0} className="h-2.5" />
                             </div>
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-xs font-black opacity-40">
                                 <span>整体进度</span>
                                 <span>{task.progress || 0}%</span>
                               </div>
-                              <Progress value={task.progress || 0} className="h-3" />
+                              <Progress value={task.progress || 0} className="h-2.5" />
                             </div>
                           </div>
                         </div>
@@ -700,8 +700,8 @@ export default function App() {
                           <Trash2 className="w-6 h-6" />
                         </Button>
                       </div>
-                      <div className="flex flex-wrap gap-6 items-center">
-                        <div className="flex flex-wrap gap-8 items-center bg-white/30 p-5 rounded-3xl flex-1">
+                      <div className="flex flex-wrap gap-4 items-center">
+                        <div className="flex flex-wrap gap-6 items-center bg-white/30 p-4 rounded-3xl flex-1">
                           <div className="flex flex-col gap-2">
                             <span className="text-xs font-black opacity-40 uppercase">进度调节</span>
                             <Slider
@@ -861,6 +861,12 @@ export default function App() {
                         </div>
                       </div>
                     ))}
+                    {isEditMode && (
+                      <Button variant="outline" onClick={addHabit} className="w-full h-14 border-dashed border-2 rounded-2xl flex items-center justify-center gap-2">
+                        <Plus className="w-5 h-5" />
+                        <span className="text-xs font-black uppercase">添加习惯</span>
+                      </Button>
+                    )}
                   </div>
                   <div className="mt-10 pt-8 border-t border-black/5 text-center">
                     <p className="text-5xl font-black text-brand-500">
