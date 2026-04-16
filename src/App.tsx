@@ -44,7 +44,10 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  Target
+  Target,
+  Film,
+  Tv,
+  ListTodo
 } from 'lucide-react';
 import { Task, Category, DailyLog, Habit, AppTheme } from './types';
 import { cn } from './lib/utils';
@@ -62,7 +65,9 @@ const INITIAL_CATEGORIES: Category[] = [
   { id: 'cat-1', name: '语文', tasks: [] },
   { id: 'cat-2', name: '数学', tasks: [] },
   { id: 'cat-3', name: '英语', tasks: [] },
-  { id: 'cat-4', name: '其他', tasks: [] },
+  { id: 'cat-4', name: '纪录片', tasks: [] },
+  { id: 'cat-5', name: '英语动画片', tasks: [] },
+  { id: 'cat-6', name: '其他', tasks: [] },
 ];
 
 const INITIAL_HABITS: Habit[] = [
@@ -70,6 +75,7 @@ const INITIAL_HABITS: Habit[] = [
   { id: 'h2', name: '浇花', icon: 'sprout', color: '#86efac', weeklyStatus: [false, true, false, false, false, false, false] },
   { id: 'h3', name: '健身', icon: 'dumbbell', color: '#fca5a5', weeklyStatus: [true, true, true, true, false, false, false] },
   { id: 'h4', name: '早起', icon: 'zap', color: '#fde047', weeklyStatus: [true, false, false, false, false, false, false] },
+  { id: 'h5', name: '今年待办', icon: 'list-todo', color: '#a78bfa', weeklyStatus: [false, false, false, false, false, false, false] },
 ];
 
 export default function App() {
@@ -289,6 +295,8 @@ export default function App() {
       case '语文': return <BookOpen className="w-5 h-5" />;
       case '数学': return <Calculator className="w-5 h-5" />;
       case '英语': return <Languages className="w-5 h-5" />;
+      case '纪录片': return <Film className="w-5 h-5" />;
+      case '英语动画片': return <Tv className="w-5 h-5" />;
       default: return <MoreHorizontal className="w-5 h-5" />;
     }
   };
@@ -299,6 +307,7 @@ export default function App() {
       case 'sprout': return <Sprout className="w-4 h-4" />;
       case 'dumbbell': return <Dumbbell className="w-4 h-4" />;
       case 'zap': return <Zap className="w-4 h-4" />;
+      case 'list-todo': return <ListTodo className="w-4 h-4" />;
       default: return <Settings className="w-4 h-4" />;
     }
   };
@@ -595,36 +604,36 @@ export default function App() {
             className="bento-grid"
           >
             {currentPage === 0 && (
-              <section className="col-span-12 glass-card p-10 space-y-10">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-4xl font-black flex items-center gap-4 font-cute">
-                    今日任务 <span className="opacity-30 font-medium text-2xl">/ Tasks</span>
+              <section className="col-span-12 glass-card p-6 flex flex-col h-[calc(100vh-260px)] min-h-[600px]">
+                <div className="flex justify-between items-center shrink-0 mb-4">
+                  <h2 className="text-3xl font-black flex items-center gap-3 font-cute">
+                    今日任务 <span className="opacity-30 font-medium text-xl">/ Tasks</span>
                   </h2>
-                  <Button size="icon" onClick={() => addTask(activeCategory)} className="rounded-2xl w-16 h-16 shadow-lg">
-                    <Plus className="w-8 h-8" />
+                  <Button size="icon" onClick={() => addTask(activeCategory)} className="rounded-2xl w-12 h-12 shadow-lg">
+                    <Plus className="w-6 h-6" />
                   </Button>
                 </div>
 
-          <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+          <div className="flex gap-3 overflow-x-auto pb-4 shrink-0 no-scrollbar">
             {log.categories.map(cat => (
-              <div key={cat.id} className="relative group">
+              <div key={cat.id} className="relative group shrink-0">
                 <button
                   onClick={() => setActiveCategory(cat.id)}
                   className={cn(
-                    "flex items-center gap-4 px-8 py-5 rounded-[24px] whitespace-nowrap transition-all",
+                    "flex items-center gap-3 px-6 py-3 rounded-[20px] whitespace-nowrap transition-all",
                     activeCategory === cat.id ? "bg-brand-500 text-white shadow-xl scale-105" : "bg-black/5 opacity-60 hover:opacity-100"
                   )}
                 >
                   {getCategoryIcon(cat.name)}
                   {isEditMode ? (
                     <input 
-                      className="bg-transparent font-black text-lg uppercase tracking-wider focus:outline-none w-24"
+                      className="bg-transparent font-black text-xl uppercase tracking-wider focus:outline-none w-24"
                       value={cat.name}
                       onChange={e => updateCategoryName(cat.id, e.target.value)}
                       onClick={e => e.stopPropagation()}
                     />
                   ) : (
-                    <span className="font-black text-2xl uppercase tracking-wider">{cat.name}</span>
+                    <span className="font-black text-xl uppercase tracking-wider">{cat.name}</span>
                   )}
                 </button>
                 {isEditMode && (
@@ -638,24 +647,32 @@ export default function App() {
               </div>
             ))}
             {isEditMode && (
-              <Button variant="outline" onClick={addCategory} className="rounded-[24px] border-dashed border-2 h-16 px-6">
-                <Plus className="w-6 h-6" />
+              <Button variant="outline" onClick={addCategory} className="rounded-[20px] border-dashed border-2 h-12 px-5 shrink-0">
+                <Plus className="w-5 h-5" />
               </Button>
             )}
           </div>
 
-          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar pb-6 mt-2 content-start">
             <AnimatePresence mode="popLayout">
-              {log.categories.find(c => c.id === activeCategory)?.tasks.map((task, idx) => (
+              {log.categories.find(c => c.id === activeCategory)?.tasks
+                .slice()
+                .sort((a, b) => {
+                  if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
+                  const qA = a.quadrant || 4;
+                  const qB = b.quadrant || 4;
+                  return qA - qB;
+                })
+                .map((task, idx) => (
                 <motion.div
                   key={task.id}
                   layout
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="bento-inner-card group relative p-5"
+                  className="bento-inner-card group relative p-3"
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3">
                     <Checkbox 
                       checked={task.status === 'done'} 
                       onCheckedChange={() => {
@@ -667,143 +684,187 @@ export default function App() {
                       }}
                       className="w-8 h-8 rounded-xl mt-1.5"
                     />
-                    <div className="flex-1 space-y-4">
+                    <div className="flex-1 space-y-2">
                       <div className="flex justify-between items-center">
                         <div className="flex-1 space-y-2">
-                          <Input
-                            placeholder={`任务 ${idx + 1}...`}
-                            value={task.title}
-                            onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
-                            className={cn(
-                              "border-none bg-transparent p-0 h-auto font-black text-4xl focus-visible:ring-0",
-                              task.status === 'done' && "line-through opacity-30"
-                            )}
-                          />
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pr-4">
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center text-xs font-black opacity-40">
-                                <span>单元进度 ({task.completedUnits || 0}/{task.totalUnits || 1})</span>
-                                <span>{task.totalUnits ? Math.round((task.completedUnits || 0) / task.totalUnits * 100) : 0}%</span>
+                          <div className="flex items-center gap-3">
+                            <Input
+                              placeholder="任务名称..."
+                              value={task.title}
+                              onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
+                              className={cn(
+                                "border-none bg-transparent p-0 h-auto font-black text-2xl md:text-2xl focus-visible:ring-0 font-cute",
+                                task.status === 'done' && "line-through opacity-30"
+                              )}
+                            />
+                            <select
+                              className={cn(
+                                "rounded-xl px-3 py-1.5 text-xs font-black outline-none border-none cursor-pointer shadow-sm appearance-none",
+                                task.quadrant === 1 ? "bg-rose-100 text-rose-600" :
+                                task.quadrant === 2 ? "bg-amber-100 text-amber-600" :
+                                task.quadrant === 3 ? "bg-blue-100 text-blue-600" :
+                                "bg-slate-100 text-slate-500"
+                              )}
+                              value={task.quadrant || 4}
+                              onChange={(e) => updateTask(activeCategory, task.id, { quadrant: parseInt(e.target.value) as 1 | 2 | 3 | 4 })}
+                            >
+                              <option value={1}>重要且紧急</option>
+                              <option value={2}>重要不紧急</option>
+                              <option value={3}>紧急不重要</option>
+                              <option value={4}>不重要不紧急</option>
+                            </select>
+                          </div>
+                          <div className="flex gap-8">
+                            {/* Column 1: Unit Related */}
+                            <div className="w-44 space-y-4">
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-center text-xs font-black opacity-40">
+                                  <span>单元进度 ({task.completedUnits || 0}/{task.totalUnits || 1})</span>
+                                  <span>{task.totalUnits ? Math.round((task.completedUnits || 0) / task.totalUnits * 100) : 0}%</span>
+                                </div>
+                                <Progress value={task.totalUnits ? (task.completedUnits || 0) / task.totalUnits * 100 : 0} className="h-2" />
                               </div>
-                              <Progress value={task.totalUnits ? (task.completedUnits || 0) / task.totalUnits * 100 : 0} className="h-2.5" />
+                              
+                              <div className="space-y-3 bg-white/30 px-3 py-2.5 rounded-2xl">
+                                <div className="flex flex-col gap-1.5">
+                                  <span className="text-[10px] font-black opacity-40 uppercase">单元操作</span>
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5 bg-black/5 p-1 rounded-lg">
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="h-5 w-5 p-0 rounded-md text-[10px]"
+                                        onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.max(0, (task.completedUnits || 0) - 1) })}
+                                      >
+                                        -
+                                      </Button>
+                                      <span className="text-xs font-black w-4 text-center">{task.completedUnits || 0}</span>
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="h-5 w-5 p-0 rounded-md text-[10px]"
+                                        onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.min(task.totalUnits || 1, (task.completedUnits || 0) + 1) })}
+                                      >
+                                        +
+                                      </Button>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[10px] opacity-30">/</span>
+                                      <Input 
+                                        type="number" 
+                                        className="h-6 w-8 text-[10px] p-0 text-center bg-transparent border-none focus-visible:ring-0 font-black"
+                                        value={task.totalUnits || 1}
+                                        onChange={(e) => updateTask(activeCategory, task.id, { totalUnits: Math.max(1, parseInt(e.target.value) || 1) })}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <span className="text-[10px] font-black opacity-40 uppercase">开始计时</span>
+                                  <div className="flex items-center gap-2">
+                                    <Button 
+                                      size="sm"
+                                      variant={activeTimer?.taskId === task.id ? "destructive" : "default"}
+                                      onClick={() => {
+                                        if (activeTimer?.taskId === task.id) {
+                                          handleTimerEnd();
+                                        } else {
+                                          setActiveTimer({ taskId: task.id, categoryId: activeCategory });
+                                        }
+                                      }}
+                                      className="h-8 px-4 text-xs font-black uppercase rounded-xl shadow-md flex-1"
+                                    >
+                                      {activeTimer?.taskId === task.id ? <Pause className="w-3.5 h-3.5 mr-1.5" /> : <Play className="w-3.5 h-3.5 mr-1.5" />}
+                                      {activeTimer?.taskId === task.id ? '暂停' : '开始'}
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      onClick={() => updateTask(activeCategory, task.id, { timeSpent: 0, remainingTime: (task.countdownDuration || 25) * 60 })} 
+                                      className="h-8 w-8 opacity-30 hover:opacity-100 bg-white/40 rounded-xl"
+                                    >
+                                      <RotateCcw className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center text-xs font-black opacity-40">
-                                <span>整体进度</span>
-                                <span>{task.progress || 0}%</span>
+
+                            {/* Column 2: Overall Progress Related */}
+                            <div className="w-44 space-y-4">
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-center text-xs font-black opacity-40">
+                                  <span>整体进度</span>
+                                  <span>{task.progress || 0}%</span>
+                                </div>
+                                <Progress value={task.progress || 0} className="h-2" />
                               </div>
-                              <Progress value={task.progress || 0} className="h-2.5" />
+
+                              <div className="space-y-3 bg-white/30 px-3 py-2.5 rounded-2xl">
+                                <div className="flex flex-col gap-1.5">
+                                  <span className="text-[10px] font-black opacity-40 uppercase">进度调节</span>
+                                  <Slider
+                                    value={[task.progress || 0]}
+                                    max={100}
+                                    step={1}
+                                    onValueChange={(val) => {
+                                      const progress = Array.isArray(val) ? val[0] : val;
+                                      updateTask(activeCategory, task.id, { 
+                                        progress,
+                                        status: progress === 100 ? 'done' : 'pending'
+                                      });
+                                    }}
+                                    className="w-full"
+                                  />
+                                </div>
+                                <div className="flex flex-col items-center gap-1 border-t border-black/5 pt-2">
+                                  <span className="text-3xl font-mono font-black text-brand-600 tracking-tighter leading-none">
+                                    {task.timerMode === 'down' ? formatTime(task.remainingTime || 0) : formatTime(task.timeSpent || 0)}
+                                  </span>
+                                  <span className="text-[9px] font-black opacity-30 uppercase tracking-[0.2em]">
+                                    {task.timerMode === 'down' ? '剩余' : '累计'}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => removeTask(activeCategory, task.id)} className="opacity-0 group-hover:opacity-100 w-12 h-12">
-                          <Trash2 className="w-6 h-6" />
+                        <Button variant="ghost" size="icon" onClick={() => removeTask(activeCategory, task.id)} className="opacity-0 group-hover:opacity-100 w-10 h-10">
+                          <Trash2 className="w-5 h-5" />
                         </Button>
                       </div>
-                      <div className="flex flex-wrap gap-4 items-center">
-                        <div className="flex flex-wrap gap-6 items-center bg-white/30 p-4 rounded-3xl flex-1">
-                          <div className="flex flex-col gap-2">
-                            <span className="text-xs font-black opacity-40 uppercase">进度调节</span>
-                            <Slider
-                              value={[task.progress || 0]}
-                              max={100}
-                              step={1}
-                              onValueChange={(val) => {
-                                const progress = Array.isArray(val) ? val[0] : val;
+                      {/* Additional Options */}
+                      <div className="flex gap-4 items-center bg-black/5 px-4 py-2 rounded-xl w-fit">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black opacity-40 uppercase">模式</span>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            className="h-6 px-2 text-[10px] font-black rounded-lg"
+                            onClick={() => updateTask(activeCategory, task.id, { timerMode: task.timerMode === 'down' ? 'up' : 'down' })}
+                          >
+                            {task.timerMode === 'down' ? '倒计时' : '正计时'}
+                          </Button>
+                        </div>
+                        {task.timerMode === 'down' && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black opacity-40 uppercase">设定</span>
+                            <Input 
+                              type="number" 
+                              className="h-6 w-10 text-[10px] p-0 text-center bg-white/50 rounded-lg font-black border-none focus-visible:ring-0"
+                              placeholder="分"
+                              value={task.countdownDuration || 25}
+                              onChange={(e) => {
+                                const mins = Math.max(1, parseInt(e.target.value) || 1);
                                 updateTask(activeCategory, task.id, { 
-                                  progress,
-                                  status: progress === 100 ? 'done' : 'pending'
+                                  countdownDuration: mins,
+                                  remainingTime: mins * 60
                                 });
                               }}
-                              className="w-40"
                             />
+                            <span className="text-[10px] font-black opacity-40">分</span>
                           </div>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-xs font-black opacity-40 uppercase">单元完成</span>
-                            <div className="flex items-center gap-3">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="h-9 w-9 p-0 rounded-xl"
-                                onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.max(0, (task.completedUnits || 0) - 1) })}
-                              >
-                                -
-                              </Button>
-                              <span className="text-lg font-black w-6 text-center">{task.completedUnits || 0}</span>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="h-9 w-9 p-0 rounded-xl"
-                                onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.min(task.totalUnits || 1, (task.completedUnits || 0) + 1) })}
-                              >
-                                +
-                              </Button>
-                              <span className="text-xs opacity-40">/</span>
-                              <Input 
-                                type="number" 
-                                className="h-9 w-12 text-sm p-1 text-center bg-transparent border-none focus-visible:ring-0 font-black"
-                                value={task.totalUnits || 1}
-                                onChange={(e) => updateTask(activeCategory, task.id, { totalUnits: Math.max(1, parseInt(e.target.value) || 1) })}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-xs font-black opacity-40 uppercase">计时模式</span>
-                            <div className="flex items-center gap-3">
-                              <Button 
-                                size="sm" 
-                                variant={task.timerMode === 'down' ? "secondary" : "ghost"}
-                                className="h-9 px-4 text-xs font-black rounded-xl"
-                                onClick={() => updateTask(activeCategory, task.id, { timerMode: task.timerMode === 'down' ? 'up' : 'down' })}
-                              >
-                                {task.timerMode === 'down' ? '倒计时' : '正计时'}
-                              </Button>
-                              {task.timerMode === 'down' && (
-                                <Input 
-                                  type="number" 
-                                  className="h-9 w-16 text-sm p-1 text-center bg-white/50 rounded-xl font-black"
-                                  placeholder="分"
-                                  value={task.countdownDuration || 25}
-                                  onChange={(e) => {
-                                    const mins = Math.max(1, parseInt(e.target.value) || 1);
-                                    updateTask(activeCategory, task.id, { 
-                                      countdownDuration: mins,
-                                      remainingTime: mins * 60
-                                    });
-                                  }}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 bg-white/50 px-8 py-4 rounded-[24px] shadow-sm">
-                          <Button 
-                            size="sm"
-                            variant={activeTimer?.taskId === task.id ? "destructive" : "default"}
-                            onClick={() => {
-                              if (activeTimer?.taskId === task.id) {
-                                handleTimerEnd();
-                              } else {
-                                setActiveTimer({ taskId: task.id, categoryId: activeCategory });
-                              }
-                            }}
-                            className="h-14 px-8 text-lg font-black uppercase rounded-2xl shadow-md"
-                          >
-                            {activeTimer?.taskId === task.id ? <Pause className="w-6 h-6 mr-2" /> : <Play className="w-6 h-6 mr-2" />}
-                            {activeTimer?.taskId === task.id ? '暂停' : '开始'}
-                          </Button>
-                          <div className="flex flex-col items-center">
-                            <span className="text-4xl font-mono font-black text-brand-600 tracking-tighter w-44 text-center">
-                              {task.timerMode === 'down' ? formatTime(task.remainingTime || 0) : formatTime(task.timeSpent || 0)}
-                            </span>
-                            <span className="text-xs font-black opacity-30 uppercase tracking-widest">
-                              {task.timerMode === 'down' ? '剩余时间' : '累计用时'}
-                            </span>
-                          </div>
-                          <Button variant="ghost" size="icon" onClick={() => updateTask(activeCategory, task.id, { timeSpent: 0, remainingTime: (task.countdownDuration || 25) * 60 })} className="h-12 w-12 opacity-30 hover:opacity-100">
-                            <RotateCcw className="w-6 h-6" />
-                          </Button>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -816,45 +877,45 @@ export default function App() {
 
             {currentPage === 1 && (
               <>
-                <section className="col-span-12 lg:col-span-4 glass-card p-10 flex flex-col">
-                  <h3 className="text-xl font-black uppercase tracking-[0.2em] opacity-40 mb-8 font-cute">习惯周报 / Weekly</h3>
-                  <div className="space-y-8 flex-1 overflow-y-auto no-scrollbar">
+                <section className="col-span-12 lg:col-span-4 glass-card p-6 flex flex-col">
+                  <h3 className="text-lg font-black uppercase tracking-[0.2em] opacity-40 mb-4 font-cute">习惯周报 / Weekly</h3>
+                  <div className="space-y-4 flex-1 overflow-y-auto no-scrollbar">
                     {log.habits.map(habit => (
-                      <div key={habit.id} className="space-y-4 group relative">
+                      <div key={habit.id} className="space-y-2 group relative">
                         <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-xl" style={{ backgroundColor: `${habit.color}20`, color: habit.color }}>
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${habit.color}20`, color: habit.color }}>
                               {getHabitIcon(habit.icon)}
                             </div>
                             {isEditMode ? (
                               <Input 
-                                className="h-9 py-0 px-2 border-none bg-black/5 focus-visible:ring-0 text-lg font-black w-32"
+                                className="h-8 py-0 px-2 border-none bg-black/5 focus-visible:ring-0 text-base font-black w-28"
                                 value={habit.name}
                                 onChange={e => updateHabit(habit.id, { name: e.target.value })}
                               />
                             ) : (
-                              <span className="text-xl font-black">{habit.name}</span>
+                              <span className="text-lg font-black">{habit.name}</span>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-mono opacity-40">{habit.weeklyStatus.filter(Boolean).length}/7</span>
+                            <span className="text-xs font-mono opacity-40">{habit.weeklyStatus.filter(Boolean).length}/7</span>
                             {isEditMode && (
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
                                 onClick={() => removeHabit(habit.id)}
-                                className="h-8 w-8 text-rose-500 hover:bg-rose-50"
+                                className="h-6 w-6 text-rose-500 hover:bg-rose-50"
                               >
-                                <X className="w-4 h-4" />
+                                <X className="w-3 h-3" />
                               </Button>
                             )}
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5">
                           {habit.weeklyStatus.map((done, i) => (
                             <div 
                               key={i} 
-                              className={cn("flex-1 h-3 rounded-full transition-all", !done && "bg-black/5")}
+                              className={cn("flex-1 h-2.5 rounded-full transition-all", !done && "bg-black/5")}
                               style={{ backgroundColor: done ? habit.color : undefined }}
                             />
                           ))}
@@ -862,30 +923,30 @@ export default function App() {
                       </div>
                     ))}
                     {isEditMode && (
-                      <Button variant="outline" onClick={addHabit} className="w-full h-14 border-dashed border-2 rounded-2xl flex items-center justify-center gap-2">
-                        <Plus className="w-5 h-5" />
+                      <Button variant="outline" onClick={addHabit} className="w-full h-10 border-dashed border-2 rounded-xl flex items-center justify-center gap-2">
+                        <Plus className="w-4 h-4" />
                         <span className="text-xs font-black uppercase">添加习惯</span>
                       </Button>
                     )}
                   </div>
-                  <div className="mt-10 pt-8 border-t border-black/5 text-center">
-                    <p className="text-5xl font-black text-brand-500">
+                  <div className="mt-6 pt-4 border-t border-black/5 text-center">
+                    <p className="text-4xl font-black text-brand-500">
                       {log.habits.length > 0 ? Math.round(log.habits.reduce((acc, h) => acc + h.weeklyStatus.filter(Boolean).length, 0) / (log.habits.length * 7) * 100) : 0}%
                     </p>
-                    <p className="text-xs font-black opacity-40 uppercase tracking-widest mt-2">习惯养成率</p>
+                    <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mt-1">习惯养成率</p>
                   </div>
                 </section>
 
-        <section className="col-span-12 lg:col-span-8 glass-card p-10">
-          <div className="flex justify-between items-center mb-10">
-            <h2 className="text-3xl font-black flex items-center gap-4 font-cute">
-              数据统计 <span className="opacity-30 font-medium text-xl">/ Statistics</span>
+        <section className="col-span-12 lg:col-span-8 glass-card p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-black flex items-center gap-3 font-cute">
+              数据统计 <span className="opacity-30 font-medium text-lg">/ Statistics</span>
             </h2>
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               {weekDays.map((day, i) => (
                 <span key={i} className={cn(
-                  "text-sm font-black w-12 text-center",
-                  i === (new Date().getDay() || 7) - 1 ? "bg-brand-500 text-white rounded-full py-2" : "opacity-30"
+                  "text-xs font-black w-10 text-center",
+                  i === (new Date().getDay() || 7) - 1 ? "bg-brand-500 text-white rounded-full py-1.5" : "opacity-30"
                 )}>
                   {day}
                 </span>
@@ -893,50 +954,50 @@ export default function App() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-            <div className="bento-inner-card p-10 flex flex-col items-center justify-center text-center space-y-4">
-              <Zap className="w-12 h-12 text-amber-500" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="bento-inner-card p-6 flex flex-col items-center justify-center text-center space-y-2">
+              <Zap className="w-10 h-10 text-amber-500" />
               <div>
-                <p className="text-6xl font-black text-brand-500">{calculateProgress()}%</p>
-                <p className="text-sm font-black opacity-40 uppercase tracking-widest mt-2">今日总任务进度</p>
+                <p className="text-5xl font-black text-brand-500">{calculateProgress()}%</p>
+                <p className="text-xs font-black opacity-40 uppercase tracking-widest mt-1">今日总任务进度</p>
               </div>
             </div>
-            <div className="bento-inner-card p-10 flex flex-col items-center justify-center text-center space-y-4">
-              <Target className="w-12 h-12 text-indigo-500" />
+            <div className="bento-inner-card p-6 flex flex-col items-center justify-center text-center space-y-2">
+              <Target className="w-10 h-10 text-indigo-500" />
               <div>
-                <p className="text-6xl font-black text-brand-500">
+                <p className="text-5xl font-black text-brand-500">
                   {log.categories.flatMap(c => c.tasks).filter(t => t.status === 'done').length}
                 </p>
-                <p className="text-sm font-black opacity-40 uppercase tracking-widest mt-2">今日已完成任务</p>
+                <p className="text-xs font-black opacity-40 uppercase tracking-widest mt-1">今日已完成任务</p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {log.habits.map(habit => (
-              <div key={habit.id} className="bento-inner-card group">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="p-4 rounded-2xl" style={{ backgroundColor: `${habit.color}20`, color: habit.color }}>
+              <div key={habit.id} className="bento-inner-card group p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl" style={{ backgroundColor: `${habit.color}20`, color: habit.color }}>
                       {getHabitIcon(habit.icon)}
                     </div>
                     {isEditMode ? (
                       <Input 
-                        className="h-10 py-0 px-2 border-none bg-black/5 focus-visible:ring-0 text-2xl font-black w-40"
+                        className="h-8 py-0 px-2 border-none bg-black/5 focus-visible:ring-0 text-xl font-black w-32"
                         value={habit.name}
                         onChange={e => updateHabit(habit.id, { name: e.target.value })}
                       />
                     ) : (
-                      <span className="text-2xl font-black">{habit.name}</span>
+                      <span className="text-xl font-black">{habit.name}</span>
                     )}
                   </div>
                   {isEditMode && (
-                    <Button variant="ghost" size="icon" onClick={() => removeHabit(habit.id)} className="text-rose-500 opacity-0 group-hover:opacity-100 w-12 h-12">
-                      <Trash2 className="w-6 h-6" />
+                    <Button variant="ghost" size="icon" onClick={() => removeHabit(habit.id)} className="text-rose-500 opacity-0 group-hover:opacity-100 w-10 h-10">
+                      <Trash2 className="w-5 h-5" />
                     </Button>
                   )}
                 </div>
-                <div className="flex justify-between gap-3">
+                <div className="flex justify-between gap-2">
                   {habit.weeklyStatus.map((done, i) => (
                     <button 
                       key={i} 
@@ -946,7 +1007,7 @@ export default function App() {
                         updateHabit(habit.id, { weeklyStatus: newStatus });
                       }}
                       className={cn(
-                        "w-full h-12 rounded-2xl transition-all",
+                        "w-full h-10 rounded-xl transition-all",
                         done ? "shadow-lg scale-105" : "bg-white/50 hover:bg-white/80"
                       )}
                       style={{ backgroundColor: done ? habit.color : undefined }}
