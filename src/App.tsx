@@ -73,7 +73,7 @@ const INITIAL_CATEGORIES: Category[] = [
 const INITIAL_HABITS: Habit[] = [
   { id: 'h1', name: '喝水', icon: 'droplets', color: '#93c5fd', weeklyStatus: [true, true, false, false, false, false, false] },
   { id: 'h2', name: '浇花', icon: 'sprout', color: '#86efac', weeklyStatus: [false, true, false, false, false, false, false] },
-  { id: 'h3', name: '健身', icon: 'dumbbell', color: '#fca5a5', weeklyStatus: [true, true, true, true, false, false, false] },
+  { id: 'h3', name: '健身', icon: 'dumbbell', color: '#fb923c', weeklyStatus: [true, true, true, true, false, false, false] },
   { id: 'h4', name: '早起', icon: 'zap', color: '#fde047', weeklyStatus: [true, false, false, false, false, false, false] },
   { id: 'h5', name: '今年待办', icon: 'list-todo', color: '#a78bfa', weeklyStatus: [false, false, false, false, false, false, false] },
 ];
@@ -315,14 +315,14 @@ export default function App() {
   const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
 
   const macaronColors = [
-    { name: '甜心粉', color: '#FFB7B2' },
+    { name: '活力橙', color: '#fb923c' },
     { name: '蜜桃橘', color: '#FFDAC1' },
     { name: '薄荷绿', color: '#E2F0CB' },
     { name: '青草绿', color: '#B5EAD7' },
     { name: '薰衣草', color: '#C7CEEA' },
-    { name: '樱花粉', color: '#FF9AA2' },
+    { name: '宝石蓝', color: '#38bdf8' },
     { name: '奶油黄', color: '#FFFFD8' },
-    { name: '经典粉', color: '#fb7185' },
+    { name: '星空蓝', color: '#0369a1' },
     { name: '天空蓝', color: '#2196F3' },
     { name: '忧郁灰', color: '#94a3b8' },
   ];
@@ -343,7 +343,7 @@ export default function App() {
 
     return (
       <div className="grid grid-cols-7 gap-2 mt-6">
-        {weekDays.map(d => <div key={d} className="text-sm font-bold opacity-30 text-center py-2">{d}</div>)}
+        {weekDays.map(d => <div key={d} className="text-sm font-black text-slate-900 text-center py-2">{d}</div>)}
         {days.map((d, i) => (
           <div 
             key={i} 
@@ -385,12 +385,16 @@ export default function App() {
         isEyeCare && "eyecare"
       )}
       style={{ 
-        backgroundColor: log.themeColor ? `${log.themeColor}15` : undefined,
+        backgroundColor: log.themeColor ? `${log.themeColor}55` : '#f1f5f9',
         backgroundImage: log.backgroundImage ? `url(${log.backgroundImage})` : undefined,
-        '--color-brand-500': log.themeColor || '#fb7185',
-        '--color-bento-accent': log.themeColor || '#fb7185'
+        '--color-brand-500': log.themeColor || '#0ea5e9',
+        '--color-brand-600': log.themeColor || '#0284c7',
+        '--color-bento-accent': log.themeColor || '#0ea5e9',
+        '--primary': log.themeColor || '#0ea5e9'
       } as any}
     >
+      <div className="bg-slate-900/5 fixed inset-0 pointer-events-none" /> {/* Subtle overlay for better contrast when background is very light */}
+
       {/* Header */}
       <header className="glass-card p-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-4">
@@ -401,26 +405,26 @@ export default function App() {
             {isEditMode ? (
               <div className="space-y-2">
                 <Input 
-                  className="text-3xl font-bold h-auto py-1 px-2 border-none bg-black/5 focus-visible:ring-0 font-cute"
+                  className="text-3xl font-black h-auto py-1 px-2 border-none bg-slate-100 focus-visible:ring-0 font-cute"
                   value={appConfig.title}
                   onChange={e => setAppConfig(prev => ({ ...prev, title: e.target.value }))}
                 />
                 <Input 
-                  className="text-lg opacity-60 h-auto py-1 px-2 border-none bg-black/5 focus-visible:ring-0 font-cute"
+                  className="text-lg opacity-80 h-auto py-1 px-2 border-none bg-slate-100 focus-visible:ring-0 font-cute text-slate-700"
                   value={appConfig.tagline}
                   onChange={e => setAppConfig(prev => ({ ...prev, tagline: e.target.value }))}
                 />
               </div>
             ) : (
               <>
-                <h1 className="text-4xl font-bold tracking-tight font-cute text-brand-500">{appConfig.title}</h1>
-                <p className="opacity-60 text-lg font-medium mt-1 font-cute">{log.date} · {appConfig.tagline}</p>
+                <h1 className="text-4xl font-black tracking-tight font-cute text-slate-900">{appConfig.title}</h1>
+                <p className="opacity-70 text-lg font-medium mt-1 font-cute text-slate-600">{log.date} · {appConfig.tagline}</p>
               </>
             )}
           </div>
         </div>
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2 bg-black/5 p-2 rounded-2xl">
+            <div className="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
               <input
                 type="file"
                 id="bg-upload"
@@ -441,7 +445,7 @@ export default function App() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-xl w-10 h-10 hover:bg-rose-50 text-rose-500"
+                  className="rounded-xl w-10 h-10 hover:bg-red-50 text-red-500"
                   onClick={() => setLog(prev => ({ ...prev, backgroundImage: undefined }))}
                   title="移除背景图"
                 >
@@ -470,7 +474,7 @@ export default function App() {
             onClick={() => setIsEyeCare(!isEyeCare)}
             className={cn(
               "rounded-2xl w-12 h-12 transition-all",
-              isEyeCare ? "bg-amber-100 text-amber-600" : "bg-black/5 text-slate-400"
+              isEyeCare ? "bg-amber-100 text-amber-600" : "bg-slate-100 text-slate-500 border border-slate-200"
             )}
           >
             <Droplets className={cn("w-6 h-6", isEyeCare && "fill-current")} />
@@ -481,7 +485,7 @@ export default function App() {
                 <Button 
                   variant="ghost"
                   size="icon"
-                  className="rounded-2xl text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                  className="rounded-2xl text-red-500 hover:text-red-600 hover:bg-red-50"
                 >
                   <Trash2 className="w-5 h-5" />
                 </Button>
@@ -518,7 +522,7 @@ export default function App() {
             {isEditMode ? <Save className="w-6 h-6" /> : <Edit3 className="w-6 h-6" />}
             {isEditMode ? '保存' : '编辑模式'}
           </Button>
-          <div className="flex bg-black/5 p-1 rounded-2xl">
+          <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
             {(['sunny', 'cloudy', 'rainy'] as const).map((w) => (
               <button
                 key={w}
@@ -604,10 +608,10 @@ export default function App() {
             className="bento-grid"
           >
             {currentPage === 0 && (
-              <section className="col-span-12 glass-card p-6 flex flex-col h-[calc(100vh-260px)] min-h-[600px]">
-                <div className="flex justify-between items-center shrink-0 mb-4">
-                  <h2 className="text-3xl font-black flex items-center gap-3 font-cute">
-                    今日任务 <span className="opacity-30 font-medium text-xl">/ Tasks</span>
+              <section className="col-span-12 glass-card p-6 flex flex-col h-auto min-h-[600px]">
+                <div className="flex justify-between items-center shrink-0 mb-6">
+                  <h2 className="text-3xl font-black flex items-center gap-3 font-cute text-slate-900">
+                    今日任务 <span className="text-slate-500 font-medium text-xl">/ Tasks</span>
                   </h2>
                   <Button size="icon" onClick={() => addTask(activeCategory)} className="rounded-2xl w-12 h-12 shadow-lg">
                     <Plus className="w-6 h-6" />
@@ -621,7 +625,7 @@ export default function App() {
                   onClick={() => setActiveCategory(cat.id)}
                   className={cn(
                     "flex items-center gap-3 px-6 py-3 rounded-[20px] whitespace-nowrap transition-all",
-                    activeCategory === cat.id ? "bg-brand-500 text-white shadow-xl scale-105" : "bg-black/5 opacity-60 hover:opacity-100"
+                    activeCategory === cat.id ? "bg-brand-500 text-white shadow-xl scale-105" : "bg-slate-200/50 text-slate-600 hover:bg-slate-200"
                   )}
                 >
                   {getCategoryIcon(cat.name)}
@@ -639,7 +643,7 @@ export default function App() {
                 {isEditMode && (
                   <button 
                     onClick={() => removeCategory(cat.id)}
-                    className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -653,26 +657,32 @@ export default function App() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar pb-6 mt-2 content-start">
+          <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-8 pb-12 mt-4 content-start">
             <AnimatePresence mode="popLayout">
               {log.categories.find(c => c.id === activeCategory)?.tasks
                 .slice()
                 .sort((a, b) => {
+                  // Always put "专注力" tasks at the top
+                  const aIsFocus = a.title.includes('专注力');
+                  const bIsFocus = b.title.includes('专注力');
+                  if (aIsFocus && !bIsFocus) return -1;
+                  if (!aIsFocus && bIsFocus) return 1;
+                  
                   if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
                   const qA = a.quadrant || 4;
                   const qB = b.quadrant || 4;
                   return qA - qB;
                 })
-                .map((task, idx) => (
+                .map((task) => (
                 <motion.div
                   key={task.id}
                   layout
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="bento-inner-card group relative p-3"
+                  className="bento-inner-card group relative p-4 md:p-5 overflow-hidden border border-black/[0.03] flex flex-col h-fit"
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     <Checkbox 
                       checked={task.status === 'done'} 
                       onCheckedChange={() => {
@@ -682,25 +692,26 @@ export default function App() {
                           progress: newStatus === 'done' ? 100 : (task.progress === 100 ? 0 : task.progress)
                         });
                       }}
-                      className="w-7 h-7 rounded-xl mt-1 sm:mt-1.5 shrink-0"
+                      className="w-8 h-8 rounded-xl mt-1.5 shrink-0 border-2"
                     />
-                    <div className="flex-1 min-w-0 space-y-3">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0 space-y-2">
-                          <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex-1 min-w-0 space-y-4">
+                      {/* Title and Top Row */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-1">
                             <Input
                               placeholder="任务名称..."
                               value={task.title}
                               onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
                               className={cn(
-                                "border-none bg-transparent p-0 h-auto font-black text-xl md:text-2xl focus-visible:ring-0 font-cute w-full sm:w-auto min-w-[120px]",
-                                task.status === 'done' && "line-through opacity-30"
+                                "border-none bg-transparent p-0 h-auto font-black text-lg md:text-xl leading-[1.2] focus-visible:ring-0 font-cute flex-1 break-words whitespace-normal overflow-wrap-anywhere",
+                                task.status === 'done' && "line-through text-slate-500"
                               )}
                             />
                             <select
                               className={cn(
-                                "rounded-xl px-2 py-1 text-[10px] font-black outline-none border-none cursor-pointer shadow-sm appearance-none shrink-0",
-                                task.quadrant === 1 ? "bg-rose-100 text-rose-600" :
+                                "rounded-xl px-2.5 py-1.5 text-[10px] font-black outline-none border-none cursor-pointer shadow-sm appearance-none shrink-0 uppercase tracking-widest h-fit",
+                                task.quadrant === 1 ? "bg-red-100 text-red-600" :
                                 task.quadrant === 2 ? "bg-amber-100 text-amber-600" :
                                 task.quadrant === 3 ? "bg-blue-100 text-blue-600" :
                                 "bg-slate-100 text-slate-500"
@@ -708,164 +719,173 @@ export default function App() {
                               value={task.quadrant || 4}
                               onChange={(e) => updateTask(activeCategory, task.id, { quadrant: parseInt(e.target.value) as 1 | 2 | 3 | 4 })}
                             >
-                              <option value={1}>重要且紧急</option>
-                              <option value={2}>重要不紧急</option>
-                              <option value={3}>紧急不重要</option>
-                              <option value={4}>不重要不紧急</option>
+                              <option value={1}>重要·紧急</option>
+                              <option value={2}>重要·普通</option>
+                              <option value={3}>紧急·普通</option>
+                              <option value={4}>不忙·常规</option>
                             </select>
                           </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            {/* Column 1: Unit Related */}
-                            <div className="min-w-0 space-y-3">
-                              <div className="space-y-1">
-                                <div className="flex justify-between items-center text-[10px] font-black opacity-40">
-                                  <span>单元进度 ({task.completedUnits || 0}/{task.totalUnits || 1})</span>
-                                  <span>{task.totalUnits ? Math.round((task.completedUnits || 0) / task.totalUnits * 100) : 0}%</span>
-                                </div>
-                                <Progress value={task.totalUnits ? (task.completedUnits || 0) / task.totalUnits * 100 : 0} className="h-1.5" />
-                              </div>
-                              
-                              <div className="space-y-3 bg-white/30 px-3 py-2 rounded-xl">
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-[10px] font-black opacity-40 uppercase">单元操作</span>
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex items-center gap-1 bg-black/5 p-0.5 rounded-lg">
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-5 w-5 p-0 rounded-md text-[10px]"
-                                        onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.max(0, (task.completedUnits || 0) - 1) })}
-                                      >
-                                        -
-                                      </Button>
-                                      <span className="text-xs font-black w-4 text-center">{task.completedUnits || 0}</span>
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-5 w-5 p-0 rounded-md text-[10px]"
-                                        onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.min(task.totalUnits || 1, (task.completedUnits || 0) + 1) })}
-                                      >
-                                        +
-                                      </Button>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-[10px] opacity-30">/</span>
-                                      <Input 
-                                        type="number" 
-                                        className="h-6 w-8 text-[10px] p-0 text-center bg-transparent border-none focus-visible:ring-0 font-black"
-                                        value={task.totalUnits || 1}
-                                        onChange={(e) => updateTask(activeCategory, task.id, { totalUnits: Math.max(1, parseInt(e.target.value) || 1) })}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-[10px] font-black opacity-40 uppercase">计时</span>
-                                  <div className="flex items-center gap-2">
-                                    <Button 
-                                      size="sm"
-                                      variant={activeTimer?.taskId === task.id ? "destructive" : "default"}
-                                      onClick={() => {
-                                        if (activeTimer?.taskId === task.id) {
-                                          handleTimerEnd();
-                                        } else {
-                                          setActiveTimer({ taskId: task.id, categoryId: activeCategory });
-                                        }
-                                      }}
-                                      className="h-7 px-3 text-[10px] font-black uppercase rounded-lg shadow-sm flex-1"
-                                    >
-                                      {activeTimer?.taskId === task.id ? <Pause className="w-3 h-3 mr-1" /> : <Play className="w-3 h-3 mr-1" />}
-                                      {activeTimer?.taskId === task.id ? '暂停' : '开始'}
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      onClick={() => updateTask(activeCategory, task.id, { timeSpent: 0, remainingTime: (task.countdownDuration || 25) * 60 })} 
-                                      className="h-7 w-7 opacity-30 hover:opacity-100 bg-white/40 rounded-lg shrink-0"
-                                    >
-                                      <RotateCcw className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Column 2: Overall Progress Related */}
-                            <div className="min-w-0 space-y-3">
-                              <div className="space-y-1">
-                                <div className="flex justify-between items-center text-[10px] font-black opacity-40">
-                                  <span>整体进度</span>
-                                  <span>{task.progress || 0}%</span>
-                                </div>
-                                <Progress value={task.progress || 0} className="h-1.5" />
-                              </div>
-
-                              <div className="space-y-3 bg-white/30 px-3 py-2 rounded-xl h-full flex flex-col justify-between">
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-[10px] font-black opacity-40 uppercase">进度调节</span>
-                                  <Slider
-                                    value={[task.progress || 0]}
-                                    max={100}
-                                    step={1}
-                                    onValueChange={(val) => {
-                                      const progress = Array.isArray(val) ? val[0] : val;
-                                      updateTask(activeCategory, task.id, { 
-                                        progress,
-                                        status: progress === 100 ? 'done' : 'pending'
-                                      });
-                                    }}
-                                    className="w-full"
-                                  />
-                                </div>
-                                <div className="flex flex-col items-center gap-0.5 border-t border-black/5 pt-1.5 mt-auto">
-                                  <span className="text-2xl font-mono font-black text-brand-600 tracking-tighter leading-none">
-                                    {task.timerMode === 'down' ? formatTime(task.remainingTime || 0) : formatTime(task.timeSpent || 0)}
-                                  </span>
-                                  <span className="text-[7px] font-black opacity-30 uppercase tracking-[0.2em] leading-none">
-                                    {task.timerMode === 'down' ? '剩余' : '累计'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => removeTask(activeCategory, task.id)} className="opacity-0 group-hover:opacity-100 w-8 h-8 shrink-0 hover:bg-rose-50 hover:text-rose-500 rounded-lg">
-                          <Trash2 className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" onClick={() => removeTask(activeCategory, task.id)} className="opacity-0 group-hover:opacity-100 w-10 h-10 shrink-0 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all">
+                          <Trash2 className="w-5 h-5" />
                         </Button>
                       </div>
-                      
-                      <div className="flex flex-wrap gap-2 items-center bg-black/5 px-3 py-1.5 rounded-xl w-fit">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-black opacity-40 uppercase">模式</span>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            className="h-5 px-1.5 text-[9px] font-black rounded-md"
-                            onClick={() => updateTask(activeCategory, task.id, { timerMode: task.timerMode === 'down' ? 'up' : 'down' })}
-                          >
-                            {task.timerMode === 'down' ? '倒计时' : '正计时'}
-                          </Button>
-                        </div>
-                        {task.timerMode === 'down' && (
-                          <div className="flex items-center gap-1.5 ml-2 border-l border-black/10 pl-2">
-                            <span className="text-[9px] font-black opacity-40 uppercase">设定</span>
-                            <Input 
-                              type="number" 
-                              className="h-5 w-8 text-[9px] p-0 text-center bg-white/50 rounded-md font-black border-none focus-visible:ring-0"
-                              placeholder="分"
-                              value={task.countdownDuration || 25}
-                              onChange={(e) => {
-                                const mins = Math.max(1, parseInt(e.target.value) || 1);
-                                updateTask(activeCategory, task.id, { 
-                                  countdownDuration: mins,
-                                  remainingTime: mins * 60
-                                });
-                              }}
-                            />
-                            <span className="text-[9px] font-black opacity-40">分</span>
+
+                      {/* Content Stacks */}
+                      <div className="space-y-4">
+                        {/* Unit Progress Card */}
+                        <div className="bg-slate-50 p-4 rounded-3xl space-y-4 border border-slate-200 shadow-sm">
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] px-1">
+                              <span>单元进度 ({task.completedUnits || 0}/{task.totalUnits || 1})</span>
+                              <span className="font-mono">{task.totalUnits ? Math.round((task.completedUnits || 0) / task.totalUnits * 100) : 0}%</span>
+                            </div>
+                            <Progress value={task.totalUnits ? (task.completedUnits || 0) / task.totalUnits * 100 : 0} className="h-3 rounded-full bg-white/50 [&>[data-slot=progress-indicator]]:bg-brand-500" />
                           </div>
-                        )}
+
+                          <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl shadow-sm">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-9 w-9 p-0 rounded-lg text-lg font-black"
+                                onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.max(0, (task.completedUnits || 0) - 1) })}
+                              >
+                                -
+                              </Button>
+                              <span className="text-xl font-black w-8 text-center tabular-nums">{task.completedUnits || 0}</span>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-9 w-9 p-0 rounded-lg text-lg font-black"
+                                onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.min(task.totalUnits || 1, (task.completedUnits || 0) + 1) })}
+                              >
+                                +
+                              </Button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-slate-800 uppercase">总计:</span>
+                              <Input 
+                                type="number" 
+                                className="h-10 w-14 text-center text-sm bg-white border-none shadow-sm font-black focus-visible:ring-0 rounded-xl"
+                                value={task.totalUnits || 1}
+                                onChange={(e) => updateTask(activeCategory, task.id, { totalUnits: Math.max(1, parseInt(e.target.value) || 1) })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Overall Progress and Timer Card */}
+                        <div className="bg-slate-50 p-4 rounded-3xl space-y-6 border border-slate-200 shadow-sm">
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-3 px-1">
+                              <div className="w-1.5 h-7 rounded-full bg-brand-500/30" />
+                              <div className="flex justify-between items-center w-full">
+                                <span className="text-sm md:text-base font-black uppercase tracking-widest text-slate-900">整体掌握程度</span>
+                                <span className="text-xl font-mono font-black text-slate-900">{task.progress || 0}%</span>
+                              </div>
+                            </div>
+                            <Progress value={task.progress || 0} className="h-4 rounded-full bg-white shadow-sm [&>[data-slot=progress-indicator]]:bg-brand-500" />
+                          </div>
+                          
+                          <Slider
+                            value={[task.progress || 0]}
+                            max={100}
+                            step={1}
+                            onValueChange={(val) => {
+                              const progress = Array.isArray(val) ? val[0] : val;
+                              updateTask(activeCategory, task.id, { 
+                                progress,
+                                status: progress === 100 ? 'done' : 'pending'
+                              });
+                            }}
+                            className="w-full [&>[data-slot=slider-range]]:bg-brand-500"
+                          />
+
+                  <div className="flex items-center justify-between gap-4 pt-4 border-t border-brand-200">
+                            <div className="flex flex-col">
+                              <span className="text-4xl font-mono font-black text-brand-600 tracking-tighter tabular-nums leading-none">
+                                {task.timerMode === 'down' ? formatTime(task.remainingTime || 0) : formatTime(task.timeSpent || 0)}
+                              </span>
+                              <span className="text-[9px] font-black text-brand-600/50 uppercase tracking-[0.3em] mt-2 ml-1">
+                                {task.timerMode === 'down' ? '剩余时长' : '累计用时'}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                size="lg"
+                                variant="ghost"
+                                onClick={() => {
+                                  if (activeTimer?.taskId === task.id) {
+                                    handleTimerEnd();
+                                  } else {
+                                    setActiveTimer({ taskId: task.id, categoryId: activeCategory });
+                                  }
+                                }}
+                                className={cn(
+                                  "h-12 px-6 text-sm font-black uppercase rounded-2xl shadow-sm flex items-center gap-2 transition-transform active:scale-95 border-2",
+                                  activeTimer?.taskId === task.id 
+                                    ? "bg-sky-50 text-sky-600 border-sky-200" 
+                                    : "bg-white text-brand-600 border-brand-100"
+                                )}
+                              >
+                                {activeTimer?.taskId === task.id ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
+                                {activeTimer?.taskId === task.id ? '停止' : '开始'}
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                onClick={() => updateTask(activeCategory, task.id, { timeSpent: 0, remainingTime: (task.countdownDuration || 25) * 60 })} 
+                                className="h-12 w-12 rounded-2xl bg-white border-brand-100 text-brand-400 hover:text-brand-600 shadow-sm"
+                              >
+                                <RotateCcw className="w-5 h-5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Mode Select Row */}
+                        <div className="flex flex-wrap items-center gap-6 px-1 pt-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">计时模式</span>
+                            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                              <button
+                                onClick={() => updateTask(activeCategory, task.id, { timerMode: 'up' })}
+                                className={cn(
+                                  "px-3 py-1.5 text-[10px] font-black rounded-lg transition-all",
+                                  task.timerMode !== 'down' ? "bg-white text-brand-600 shadow-sm" : "bg-white/20 text-slate-900"
+                                )}
+                              >正计</button>
+                              <button
+                                onClick={() => updateTask(activeCategory, task.id, { timerMode: 'down' })}
+                                className={cn(
+                                  "px-3 py-1.5 text-[10px] font-black rounded-lg transition-all",
+                                  task.timerMode === 'down' ? "bg-white text-brand-600 shadow-sm" : "bg-white/20 text-slate-900"
+                                )}
+                              >倒计</button>
+                            </div>
+                          </div>
+                          {task.timerMode === 'down' && (
+                            <div className="flex items-center gap-3 border-l-2 border-dashed border-black/10 pl-6">
+                              <span className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">设定 (分)</span>
+                              <div className="flex items-center gap-2">
+                                <Input 
+                                  type="number" 
+                                  className="h-9 w-16 text-center text-sm bg-white border-none shadow-inner font-black focus-visible:ring-2 focus-visible:ring-brand-500 rounded-xl"
+                                  value={task.countdownDuration || 25}
+                                  onChange={(e) => {
+                                    const mins = Math.max(1, parseInt(e.target.value) || 1);
+                                    updateTask(activeCategory, task.id, { 
+                                      countdownDuration: mins,
+                                      remainingTime: mins * 60
+                                    });
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -879,7 +899,7 @@ export default function App() {
             {currentPage === 1 && (
               <>
                 <section className="col-span-12 lg:col-span-4 glass-card p-6 flex flex-col">
-                  <h3 className="text-lg font-black uppercase tracking-[0.2em] opacity-40 mb-4 font-cute">习惯周报 / Weekly</h3>
+                  <h3 className="text-lg font-black uppercase tracking-[0.2em] text-slate-800 mb-4 font-cute">习惯周报 / Weekly</h3>
                   <div className="space-y-4 flex-1 overflow-y-auto no-scrollbar">
                     {log.habits.map(habit => (
                       <div key={habit.id} className="space-y-2 group relative">
@@ -890,7 +910,7 @@ export default function App() {
                             </div>
                             {isEditMode ? (
                               <Input 
-                                className="h-8 py-0 px-2 border-none bg-black/5 focus-visible:ring-0 text-base font-black w-28"
+                                className="h-8 py-0 px-2 border-none bg-slate-100 focus-visible:ring-0 text-base font-black w-28"
                                 value={habit.name}
                                 onChange={e => updateHabit(habit.id, { name: e.target.value })}
                               />
@@ -899,13 +919,13 @@ export default function App() {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono opacity-40">{habit.weeklyStatus.filter(Boolean).length}/7</span>
+                            <span className="text-xs font-mono text-slate-800">{habit.weeklyStatus.filter(Boolean).length}/7</span>
                             {isEditMode && (
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
                                 onClick={() => removeHabit(habit.id)}
-                                className="h-6 w-6 text-rose-500 hover:bg-rose-50"
+                                className="h-6 w-6 text-red-500 hover:bg-red-50"
                               >
                                 <X className="w-3 h-3" />
                               </Button>
@@ -916,7 +936,7 @@ export default function App() {
                           {habit.weeklyStatus.map((done, i) => (
                             <div 
                               key={i} 
-                              className={cn("flex-1 h-2.5 rounded-full transition-all", !done && "bg-black/5")}
+                              className={cn("flex-1 h-2.5 rounded-full transition-all", !done && "bg-slate-200")}
                               style={{ backgroundColor: done ? habit.color : undefined }}
                             />
                           ))}
@@ -934,20 +954,20 @@ export default function App() {
                     <p className="text-4xl font-black text-brand-500">
                       {log.habits.length > 0 ? Math.round(log.habits.reduce((acc, h) => acc + h.weeklyStatus.filter(Boolean).length, 0) / (log.habits.length * 7) * 100) : 0}%
                     </p>
-                    <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mt-1">习惯养成率</p>
+                    <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest mt-1">习惯养成率</p>
                   </div>
                 </section>
 
         <section className="col-span-12 lg:col-span-8 glass-card p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-black flex items-center gap-3 font-cute">
-              数据统计 <span className="opacity-30 font-medium text-lg">/ Statistics</span>
+              数据统计 <span className="text-slate-500 font-medium text-lg">/ Statistics</span>
             </h2>
             <div className="flex gap-3">
               {weekDays.map((day, i) => (
                 <span key={i} className={cn(
                   "text-xs font-black w-10 text-center",
-                  i === (new Date().getDay() || 7) - 1 ? "bg-brand-500 text-white rounded-full py-1.5" : "opacity-30"
+                  i === (new Date().getDay() || 7) - 1 ? "bg-brand-500 text-white rounded-full py-1.5" : "text-slate-900 font-black"
                 )}>
                   {day}
                 </span>
@@ -960,7 +980,7 @@ export default function App() {
               <Zap className="w-10 h-10 text-amber-500" />
               <div>
                 <p className="text-5xl font-black text-brand-500">{calculateProgress()}%</p>
-                <p className="text-xs font-black opacity-40 uppercase tracking-widest mt-1">今日总任务进度</p>
+                <p className="text-xs font-black text-slate-800 uppercase tracking-widest mt-1">今日总任务进度</p>
               </div>
             </div>
             <div className="bento-inner-card p-6 flex flex-col items-center justify-center text-center space-y-2">
@@ -969,7 +989,7 @@ export default function App() {
                 <p className="text-5xl font-black text-brand-500">
                   {log.categories.flatMap(c => c.tasks).filter(t => t.status === 'done').length}
                 </p>
-                <p className="text-xs font-black opacity-40 uppercase tracking-widest mt-1">今日已完成任务</p>
+                <p className="text-xs font-black text-slate-800 uppercase tracking-widest mt-1">今日已完成任务</p>
               </div>
             </div>
           </div>
@@ -984,7 +1004,7 @@ export default function App() {
                     </div>
                     {isEditMode ? (
                       <Input 
-                        className="h-8 py-0 px-2 border-none bg-black/5 focus-visible:ring-0 text-xl font-black w-32"
+                        className="h-8 py-0 px-2 border-none bg-slate-100 focus-visible:ring-0 text-xl font-black w-32"
                         value={habit.name}
                         onChange={e => updateHabit(habit.id, { name: e.target.value })}
                       />
@@ -993,7 +1013,7 @@ export default function App() {
                     )}
                   </div>
                   {isEditMode && (
-                    <Button variant="ghost" size="icon" onClick={() => removeHabit(habit.id)} className="text-rose-500 opacity-0 group-hover:opacity-100 w-10 h-10">
+                    <Button variant="ghost" size="icon" onClick={() => removeHabit(habit.id)} className="text-red-500 opacity-0 group-hover:opacity-100 w-10 h-10">
                       <Trash2 className="w-5 h-5" />
                     </Button>
                   )}
@@ -1033,11 +1053,11 @@ export default function App() {
                 <section className="col-span-12 md:col-span-6 glass-card p-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-bold flex items-center gap-3 font-cute">
-              今日日历 <span className="opacity-30 font-medium text-lg">/ Calendar</span>
+              今日日历 <span className="text-slate-500 font-medium text-lg">/ Calendar</span>
             </h2>
             <div className="text-right">
               <p className="text-5xl font-black leading-none font-cute" style={{ color: log.themeColor || '#fb7185' }}>{new Date().getDate()}</p>
-              <p className="text-sm font-bold opacity-40 uppercase tracking-widest mt-2">
+              <p className="text-sm font-black text-slate-800 uppercase tracking-widest mt-2">
                 {new Date().toLocaleString('zh-CN', { month: 'long' })}
               </p>
             </div>
@@ -1047,7 +1067,7 @@ export default function App() {
 
         <section className="col-span-12 md:col-span-6 glass-card p-8 flex flex-col">
           <h2 className="text-2xl font-bold flex items-center gap-3 mb-8 font-cute">
-            已完成任务 <span className="opacity-30 font-medium text-lg">/ Completed</span>
+            已完成任务 <span className="text-slate-500 font-medium text-lg">/ Completed</span>
           </h2>
           <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
             {log.categories.flatMap(c => c.tasks).filter(t => t.status === 'done').length > 0 ? (
@@ -1057,15 +1077,15 @@ export default function App() {
                     <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white">
                       <Check className="w-4 h-4" />
                     </div>
-                    <span className="text-base font-bold opacity-60 line-through">{task.title}</span>
+                    <span className="text-base font-black text-slate-700 line-through">{task.title}</span>
                   </div>
-                  <span className="text-xs font-mono font-bold opacity-30">
+                  <span className="text-xs font-mono font-black text-slate-900">
                     {Math.floor((task.timeSpent || 0) / 60)}h {(task.timeSpent || 0) % 60}m
                   </span>
                 </div>
               ))
             ) : (
-              <div className="h-full flex flex-col items-center justify-center opacity-20 space-y-4">
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4">
                 <Zap className="w-12 h-12" />
                 <p className="text-sm font-bold uppercase tracking-widest">暂无进度 / No Progress</p>
               </div>
@@ -1078,12 +1098,12 @@ export default function App() {
             {currentPage === 3 && (
               <>
                 <section className="col-span-12 md:col-span-6 glass-card p-8 space-y-6">
-          <h3 className="text-lg font-black uppercase tracking-[0.2em] opacity-40 font-cute">说明 / Notes</h3>
+          <h3 className="text-lg font-black uppercase tracking-[0.2em] text-slate-800 font-cute">说明 / Notes</h3>
           <Textarea
             placeholder="记录今天的收获与感悟..."
             value={log.notes}
             onChange={(e) => setLog(prev => ({ ...prev, notes: e.target.value }))}
-            className="min-h-[160px] bg-black/5 border-none rounded-[24px] p-8 text-xl font-medium focus-visible:ring-0 resize-none font-cute"
+            className="min-h-[160px] bg-slate-50 border border-slate-200 rounded-[24px] p-8 text-xl font-medium focus-visible:ring-0 resize-none font-cute text-slate-900"
           />
         </section>
 
@@ -1099,7 +1119,7 @@ export default function App() {
 
         {/* Row 5: Routine and Evaluation */}
         <section className="col-span-12 md:col-span-6 glass-card p-8 space-y-8">
-          <h3 className="text-lg font-black uppercase tracking-[0.2em] opacity-40 font-cute">作息 / Routine</h3>
+          <h3 className="text-lg font-black uppercase tracking-[0.2em] text-slate-800 font-cute">作息 / Routine</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="flex items-center justify-between gap-4 bento-inner-card">
               <div className="flex items-center gap-4 flex-1">
@@ -1112,7 +1132,7 @@ export default function App() {
                       onChange={e => setAppConfig(prev => ({ ...prev, routineLabels: { ...prev.routineLabels, wakeUp: e.target.value } }))}
                     />
                   ) : (
-                    <span className="text-xs font-black uppercase tracking-widest opacity-40">{appConfig.routineLabels.wakeUp}</span>
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-800">{appConfig.routineLabels.wakeUp}</span>
                   )}
                   <input 
                     type="time" 
@@ -1134,7 +1154,7 @@ export default function App() {
                       onChange={e => setAppConfig(prev => ({ ...prev, routineLabels: { ...prev.routineLabels, sleep: e.target.value } }))}
                     />
                   ) : (
-                    <span className="text-xs font-black uppercase tracking-widest opacity-40">{appConfig.routineLabels.sleep}</span>
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-800">{appConfig.routineLabels.sleep}</span>
                   )}
                   <input 
                     type="time" 
@@ -1149,11 +1169,11 @@ export default function App() {
         </section>
 
         <section className="col-span-12 md:col-span-6 glass-card p-8 space-y-8">
-          <h3 className="text-lg font-black uppercase tracking-[0.2em] opacity-40 font-cute">评价 / Evaluation</h3>
+          <h3 className="text-lg font-black uppercase tracking-[0.2em] text-slate-800 font-cute">评价 / Evaluation</h3>
           <div className="grid grid-cols-3 gap-4">
             {(Object.keys(log.ratings) as Array<keyof DailyLog['ratings']>).map((key) => (
               <div key={key} className="flex flex-col items-center gap-4 bento-inner-card p-6">
-                <span className="text-xs font-black uppercase tracking-widest opacity-40">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-800">
                   {key === 'efficiency' ? '效率' : key === 'handwriting' ? '书写' : '正确'}
                 </span>
                 <div className="flex gap-1.5">
@@ -1180,7 +1200,7 @@ export default function App() {
 </AnimatePresence>
 </div>
 
-      <footer className="text-center py-12 opacity-20">
+      <footer className="text-center py-12 text-slate-900">
         <p className="text-xs font-black uppercase tracking-[0.5em]">Stay Disciplined · Stay Fresh</p>
       </footer>
     </div>

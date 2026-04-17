@@ -7,17 +7,17 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-brand-50: #fff1f2;
-  --color-brand-100: #ffe4e6;
-  --color-brand-500: #fb7185;
-  --color-brand-600: #e11d48;
+  --color-brand-50: #f0f9ff;
+  --color-brand-100: #e0f2fe;
+  --color-brand-500: #0ea5e9;
+  --color-brand-600: #0284c7;
 
-  --color-bento-bg: #fff5f7;
+  --color-bento-bg: #f1f5f9;
   --color-bento-card: #FFFFFF;
-  --color-bento-accent: #fb7185;
-  --color-bento-soft: #fff1f2;
-  --color-bento-text: #4c0519;
-  --color-bento-sub: #9f1239;
+  --color-bento-accent: #0ea5e9;
+  --color-bento-soft: #f8fafc;
+  --color-bento-text: #000000;
+  --color-bento-sub: #1e293b;
 
   --font-sans: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", ui-sans-serif, system-ui, sans-serif;
   --font-cute: "Microsoft YaHei", sans-serif;
@@ -50,11 +50,11 @@
 }
 
 .glass-card {
-  @apply bg-white/70 rounded-[32px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/40 backdrop-blur-md transition-all duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)];
+  @apply bg-white rounded-[32px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-slate-200 transition-all duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)];
 }
 
 .bento-inner-card {
-  @apply bg-black/5 rounded-[24px] p-6 transition-all duration-300 hover:bg-black/[0.08];
+  @apply bg-white rounded-[24px] p-6 transition-all duration-300 border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200;
 }
 
 .no-scrollbar::-webkit-scrollbar {
