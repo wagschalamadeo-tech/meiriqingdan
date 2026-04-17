@@ -699,15 +699,6 @@ export default function App() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-1">
-                            <Input
-                              placeholder="任务名称..."
-                              value={task.title}
-                              onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
-                              className={cn(
-                                "border-none bg-transparent p-0 h-auto font-black text-lg md:text-xl leading-[1.2] focus-visible:ring-0 font-cute flex-1 break-words whitespace-normal overflow-wrap-anywhere",
-                                task.status === 'done' && "line-through text-slate-500"
-                              )}
-                            />
                             <select
                               className={cn(
                                 "rounded-xl px-2.5 py-1.5 text-[10px] font-black outline-none border-none cursor-pointer shadow-sm appearance-none shrink-0 uppercase tracking-widest h-fit",
@@ -720,10 +711,19 @@ export default function App() {
                               onChange={(e) => updateTask(activeCategory, task.id, { quadrant: parseInt(e.target.value) as 1 | 2 | 3 | 4 })}
                             >
                               <option value={1}>重要·紧急</option>
-                              <option value={2}>重要·普通</option>
-                              <option value={3}>紧急·普通</option>
-                              <option value={4}>不忙·常规</option>
+                              <option value={2}>重要·不紧急</option>
+                              <option value={3}>不重要·紧急</option>
+                              <option value={4}>不重要·不紧急</option>
                             </select>
+                            <Input
+                              placeholder="任务名称..."
+                              value={task.title}
+                              onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
+                              className={cn(
+                                "border-none bg-transparent p-0 h-auto font-black text-lg md:text-xl leading-[1.2] focus-visible:ring-0 font-cute flex-1 break-words whitespace-normal overflow-wrap-anywhere text-slate-900",
+                                task.status === 'done' && "line-through text-slate-500"
+                              )}
+                            />
                           </div>
                         </div>
                         <Button variant="ghost" size="icon" onClick={() => removeTask(activeCategory, task.id)} className="opacity-0 group-hover:opacity-100 w-10 h-10 shrink-0 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all">
