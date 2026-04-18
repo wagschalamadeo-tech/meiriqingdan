@@ -81,10 +81,31 @@ const INITIAL_HABITS: Habit[] = [
 
 export default function App() {
   const [log, setLog] = useState<DailyLog>(() => {
-    const saved = localStorage.getItem('daily-checkin-log');
+    const today = new Date().toISOString().split('T')[0];
+    const saved = localStorage.getItem(`daily-checkin-log-${today}`);
     if (saved) return JSON.parse(saved);
+    
+    // Try to find the most recent saved data to use as a template for categories/habits
+    const allKeys = Object.keys(localStorage).filter(k => k.startsWith('daily-checkin-log-')).sort().reverse();
+    if (allKeys.length > 0) {
+      const lastData = JSON.parse(localStorage.getItem(allKeys[0])!) as DailyLog;
+      return {
+        ...lastData,
+        date: today,
+        ratings: { efficiency: 0, handwriting: 0, accuracy: 0 },
+        notes: '',
+        comments: '',
+        // Keep habits but reset weekly status if it's a new week? 
+        // For simplicity, let's just create a new daily record based on categories/habit list
+        categories: lastData.categories.map(c => ({
+          ...c,
+          tasks: c.tasks.map(t => ({ ...t, status: 'pending', progress: 0, timeSpent: 0, completedUnits: 0 }))
+        }))
+      };
+    }
+
     return {
-      date: new Date().toISOString().split('T')[0],
+      date: today,
       weather: 'sunny',
       categories: INITIAL_CATEGORIES,
       habits: INITIAL_HABITS,
@@ -99,6 +120,33 @@ export default function App() {
       comments: '',
     };
   });
+
+  const switchDate = (days: number) => {
+    const currentDate = new Date(log.date);
+    currentDate.setDate(currentDate.getDate() + days);
+    const dateStr = currentDate.toISOString().split('T')[0];
+    
+    // Save current before switching? State updates are async, but log is current here.
+    localStorage.setItem(`daily-checkin-log-${log.date}`, JSON.stringify(log));
+
+    const saved = localStorage.getItem(`daily-checkin-log-${dateStr}`);
+    if (saved) {
+      setLog(JSON.parse(saved));
+    } else {
+      // Create new for that date based on current as template
+      setLog(prev => ({
+        ...prev,
+        date: dateStr,
+        ratings: { efficiency: 0, handwriting: 0, accuracy: 0 },
+        notes: '',
+        comments: '',
+        categories: prev.categories.map(c => ({
+          ...c,
+          tasks: c.tasks.map(t => ({ ...t, status: 'pending', progress: 0, timeSpent: 0, completedUnits: 0 }))
+        }))
+      }));
+    }
+  };
 
   const [activeCategory, setActiveCategory] = useState<string>(log.categories[0]?.id || INITIAL_CATEGORIES[0].id);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -127,7 +175,7 @@ export default function App() {
   }, [isEyeCare]);
 
   useEffect(() => {
-    localStorage.setItem('daily-checkin-log', JSON.stringify(log));
+    localStorage.setItem(`daily-checkin-log-${log.date}`, JSON.stringify(log));
   }, [log]);
 
   useEffect(() => {
@@ -365,10 +413,10 @@ export default function App() {
   ];
 
   const renderCalendar = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const today = now.getDate();
+    const logDate = new Date(log.date);
+    const year = logDate.getFullYear();
+    const month = logDate.getMonth();
+    const todayNum = logDate.getDate();
     
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -378,21 +426,44 @@ export default function App() {
     for (let i = 0; i < startDay; i++) days.push(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(i);
 
+    const getDayStatus = (day: number) => {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const saved = localStorage.getItem(`daily-checkin-log-${dateStr}`);
+      if (!saved) return null;
+      try {
+        const data = JSON.parse(saved) as DailyLog;
+        const allTasks = data.categories.flatMap(c => c.tasks);
+        if (allTasks.length === 0) return null;
+        const allDone = allTasks.every(t => t.status === 'done');
+        return allDone ? 'done' : 'pending';
+      } catch (e) {
+        return null;
+      }
+    };
+
     return (
       <div className="grid grid-cols-7 gap-2 mt-6">
-        {weekDays.map(d => <div key={d} className="text-sm font-black text-slate-900 text-center py-2">{d}</div>)}
-        {days.map((d, i) => (
-          <div 
-            key={i} 
-            className={cn(
-              "aspect-square flex flex-col items-center justify-center text-lg rounded-2xl transition-all relative",
-              d === today ? "text-white font-bold shadow-lg scale-110 z-10" : d ? "hover:bg-black/5 opacity-60" : ""
-            )}
-            style={{ backgroundColor: d === today ? (log.themeColor || '#fb7185') : undefined }}
-          >
-            {d}
-          </div>
-        ))}
+        {weekDays.map(d => <div key={d} className="text-xs font-black text-slate-400 text-center py-2 uppercase tracking-widest">{d}</div>)}
+        {days.map((d, i) => {
+          const status = d ? getDayStatus(d) : null;
+          const isSelected = d === todayNum;
+          return (
+            <button 
+              key={i} 
+              onClick={() => d && switchDate(d - todayNum)}
+              className={cn(
+                "aspect-square flex flex-col items-center justify-center rounded-2xl transition-all relative group",
+                !d && "pointer-events-none opacity-0",
+                isSelected ? "text-white font-bold shadow-lg scale-110 z-10" : "hover:bg-slate-100 text-slate-700"
+              )}
+              style={{ backgroundColor: isSelected ? (log.themeColor || '#fb7185') : undefined }}
+            >
+              <span className="text-base mb-0.5">{d}</span>
+              {status === 'done' && <Check className="w-3 h-3 text-emerald-500 font-bold" />}
+              {status === 'pending' && <X className="w-3 h-3 text-red-500 font-bold" />}
+            </button>
+          );
+        })}
       </div>
     );
   };
@@ -453,10 +524,10 @@ export default function App() {
                 />
               </div>
             ) : (
-              <>
+              <div className="text-left mt-2">
                 <h1 className="text-4xl font-black tracking-tight font-cute text-slate-900">{appConfig.title}</h1>
-                <p className="opacity-70 text-lg font-medium mt-1 font-cute text-slate-600">{log.date} · {appConfig.tagline}</p>
-              </>
+                <p className="opacity-70 text-lg font-medium mt-1 font-cute text-slate-600">{appConfig.tagline}</p>
+              </div>
             )}
           </div>
         </div>
