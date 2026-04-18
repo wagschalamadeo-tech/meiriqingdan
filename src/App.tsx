@@ -47,7 +47,8 @@ import {
   Target,
   Film,
   Tv,
-  ListTodo
+  ListTodo,
+  Pin
 } from 'lucide-react';
 import { Task, Category, DailyLog, Habit, AppTheme } from './types';
 import { cn } from './lib/utils';
@@ -133,6 +134,36 @@ export default function App() {
     localStorage.setItem('daily-checkin-config', JSON.stringify(appConfig));
   }, [appConfig]);
 
+  // Reminder System
+  useEffect(() => {
+    const checkReminders = () => {
+      const now = new Date();
+      const currentDay = (now.getDay() || 7) - 1; // 0-6
+      const currentTimeString = now.toTimeString().slice(0, 5); // "HH:mm"
+
+      log.categories.forEach(cat => {
+        cat.tasks.forEach(task => {
+          if (
+            task.isReminderActive && 
+            task.reminderTime === currentTimeString && 
+            (task.days || []).includes(currentDay) &&
+            task.status === 'pending'
+          ) {
+            setNotification(`⏰ 提醒: 是时候开始任务 "${task.title || '新任务'}" 了！`);
+            // Show for 10 seconds
+            setTimeout(() => setNotification(null), 10000);
+            
+            // Auto-deactivate for today to prevent double notification in the same minute
+            updateTask(cat.id, task.id, { isReminderActive: false });
+          }
+        });
+      });
+    };
+
+    const interval = setInterval(checkReminders, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [log]);
+
   const calculateProgress = () => {
     const allTasks = log.categories.flatMap(c => c.tasks);
     if (allTasks.length === 0) return 0;
@@ -203,7 +234,13 @@ export default function App() {
       completedUnits: 0,
       timerMode: 'up',
       countdownDuration: 25,
-      remainingTime: 1500
+      remainingTime: 1500,
+      days: [0, 1, 2, 3, 4, 5, 6],
+      quadrant: 4,
+      isPinned: false,
+      goal: '',
+      reminderTime: '',
+      isReminderActive: false
     };
 
     setLog(prev => ({
@@ -668,6 +705,10 @@ export default function App() {
                   if (aIsFocus && !bIsFocus) return -1;
                   if (!aIsFocus && bIsFocus) return 1;
                   
+                  // Pinned tasks next
+                  if (a.isPinned && !b.isPinned) return -1;
+                  if (!a.isPinned && b.isPinned) return 1;
+                  
                   if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
                   const qA = a.quadrant || 4;
                   const qB = b.quadrant || 4;
@@ -680,8 +721,21 @@ export default function App() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="bento-inner-card group relative p-4 md:p-5 overflow-hidden border border-black/[0.03] flex flex-col h-fit"
+                  className={cn(
+                    "bento-inner-card group relative p-4 md:p-5 overflow-hidden border border-black/[0.03] flex flex-col h-fit transition-all duration-500",
+                    activeTimer?.taskId === task.id && "timer-active ring-2 ring-brand-500/20"
+                  )}
                 >
+                  {activeTimer?.taskId === task.id && (
+                    <div className="absolute top-0 left-0 w-full h-1 bg-brand-500/20 overflow-hidden">
+                      <motion.div 
+                        initial={{ x: "-100%" }}
+                        animate={{ x: "100%" }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                        className="w-1/3 h-full bg-brand-500 shadow-[0_0_10px_#0ea5e9]"
+                      />
+                    </div>
+                  )}
                   <div className="flex items-start gap-4">
                     <Checkbox 
                       checked={task.status === 'done'} 
@@ -694,11 +748,40 @@ export default function App() {
                       }}
                       className="w-8 h-8 rounded-xl mt-1.5 shrink-0 border-2"
                     />
-                    <div className="flex-1 min-w-0 space-y-4">
+                    <div className="flex-1 min-w-0 space-y-3">
                       {/* Title and Top Row */}
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-1">
+                        <div className="flex-1 min-w-0 flex flex-col gap-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                               {activeTimer?.taskId === task.id ? (
+                                 <div className="flex items-center gap-2 shrink-0">
+                                   <div className="w-4 h-4 rounded-full bg-brand-500 flex items-center justify-center dot-pulse">
+                                     <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                                   </div>
+                                   <span className="text-[10px] font-black text-brand-600 animate-pulse tracking-widest uppercase">Timing</span>
+                                 </div>
+                               ) : (
+                                 <button 
+                                  onClick={() => updateTask(activeCategory, task.id, { isPinned: !task.isPinned })}
+                                  className={cn(
+                                    "shrink-0 transition-colors",
+                                    task.isPinned ? "text-amber-500" : "text-slate-300 hover:text-slate-400"
+                                  )}
+                                >
+                                  <Pin className={cn("w-4 h-4", task.isPinned && "fill-current")} />
+                                </button>
+                               )}
+                              <Input
+                                placeholder="任务名称..."
+                                value={task.title}
+                                onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
+                                className={cn(
+                                  "border-none bg-transparent p-0 h-auto font-black text-lg md:text-xl leading-[1.2] focus-visible:ring-0 font-cute flex-1 break-words whitespace-normal overflow-wrap-anywhere text-slate-900",
+                                  task.status === 'done' && "line-through text-slate-500"
+                                )}
+                              />
+                            </div>
                             <select
                               className={cn(
                                 "rounded-xl px-2.5 py-1.5 text-[10px] font-black outline-none border-none cursor-pointer shadow-sm appearance-none shrink-0 uppercase tracking-widest h-fit",
@@ -715,15 +798,55 @@ export default function App() {
                               <option value={3}>不重要·紧急</option>
                               <option value={4}>不重要·不紧急</option>
                             </select>
-                            <Input
-                              placeholder="任务名称..."
-                              value={task.title}
-                              onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
-                              className={cn(
-                                "border-none bg-transparent p-0 h-auto font-black text-lg md:text-xl leading-[1.2] focus-visible:ring-0 font-cute flex-1 break-words whitespace-normal overflow-wrap-anywhere text-slate-900",
-                                task.status === 'done' && "line-through text-slate-500"
-                              )}
-                            />
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <div className="flex items-center gap-2 group/goal flex-1 min-w-0">
+                               <Target className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                               <Input
+                                 placeholder="设置本次目标 (如: 完成复习前三章)..."
+                                 value={task.goal || ''}
+                                 onChange={(e) => updateTask(activeCategory, task.id, { goal: e.target.value })}
+                                 className="border-none bg-transparent p-0 h-auto text-[11px] font-medium focus-visible:ring-0 text-slate-500 placeholder:text-slate-300 italic flex-1"
+                               />
+                            </div>
+                            
+                            <div className="flex items-center gap-1 bg-slate-100/50 hover:bg-slate-100 rounded-lg px-2 py-1 transition-colors">
+                              <Bell className={cn("w-3.5 h-3.5", task.isReminderActive ? "text-amber-500" : "text-slate-400")} />
+                              <Input 
+                                type="time"
+                                value={task.reminderTime || ''}
+                                onChange={(e) => updateTask(activeCategory, task.id, { reminderTime: e.target.value, isReminderActive: !!e.target.value })}
+                                className="border-none bg-transparent p-0 h-4 w-[65px] text-[10px] font-black focus-visible:ring-0 text-slate-900 cursor-pointer"
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Week Day Selector */}
+                          <div className="flex gap-1 overflow-x-auto no-scrollbar py-1">
+                            {weekDays.map((label, index) => {
+                              const isSelected = (task.days || []).includes(index);
+                              return (
+                                <button
+                                  key={index}
+                                  onClick={() => {
+                                    const currentDays = task.days || [];
+                                    const newDays = isSelected
+                                      ? currentDays.filter(d => d !== index)
+                                      : [...currentDays, index];
+                                    updateTask(activeCategory, task.id, { days: newDays.sort() });
+                                  }}
+                                  className={cn(
+                                    "w-7 h-7 rounded-lg text-[10px] font-black transition-all shrink-0",
+                                    isSelected 
+                                      ? "bg-brand-500 text-white shadow-sm scale-110" 
+                                      : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                                  )}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                         <Button variant="ghost" size="icon" onClick={() => removeTask(activeCategory, task.id)} className="opacity-0 group-hover:opacity-100 w-10 h-10 shrink-0 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all">
@@ -1173,9 +1296,21 @@ export default function App() {
           <div className="grid grid-cols-3 gap-4">
             {(Object.keys(log.ratings) as Array<keyof DailyLog['ratings']>).map((key) => (
               <div key={key} className="flex flex-col items-center gap-4 bento-inner-card p-6">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-800">
-                  {key === 'efficiency' ? '效率' : key === 'handwriting' ? '书写' : '正确'}
-                </span>
+                <div className="flex flex-col items-center gap-2">
+                  <div className={cn(
+                    "p-2 rounded-xl mb-1",
+                    key === 'efficiency' ? "bg-amber-100 text-amber-600" :
+                    key === 'handwriting' ? "bg-indigo-100 text-indigo-600" :
+                    "bg-emerald-100 text-emerald-600"
+                  )}>
+                    {key === 'efficiency' ? <Zap className="w-5 h-5" /> : 
+                     key === 'handwriting' ? <Edit3 className="w-5 h-5" /> : 
+                     <Check className="w-5 h-5" />}
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-800">
+                    {key === 'efficiency' ? '效率' : key === 'handwriting' ? '书写' : '正确'}
+                  </span>
+                </div>
                 <div className="flex gap-1.5">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button

@@ -208,3 +208,22 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+@keyframes pulse-subtle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.02); opacity: 0.95; }
+}
+
+@keyframes glow-subtle {
+  0%, 100% { box-shadow: 0 0 10px rgba(14, 165, 233, 0.1); }
+  50% { box-shadow: 0 0 20px rgba(14, 165, 233, 0.4); }
+}
+
+.timer-active {
+  animation: glow-subtle 2s infinite ease-in-out;
+  border-color: rgba(14, 165, 233, 0.3) !important;
+}
+
+.dot-pulse {
+  animation: pulse-subtle 1.5s infinite ease-in-out;
+}

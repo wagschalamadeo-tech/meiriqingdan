@@ -10,6 +10,11 @@ export interface Task {
   countdownDuration?: number; // in minutes
   remainingTime?: number; // in seconds
   quadrant?: 1 | 2 | 3 | 4; // 1: 重要且紧急, 2: 重要不紧急, 3: 紧急不重要, 4: 不重要不紧急
+  days?: number[]; // 0-6 for Mon-Sun
+  isPinned?: boolean;
+  goal?: string;
+  reminderTime?: string; // HH:mm format
+  isReminderActive?: boolean;
 }
 
 export interface Category {
