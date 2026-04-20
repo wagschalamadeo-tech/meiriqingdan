@@ -48,7 +48,9 @@ import {
   Film,
   Tv,
   ListTodo,
-  Pin
+  Pin,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { Task, Category, DailyLog, Habit, AppTheme } from './types';
 import { cn } from './lib/utils';
@@ -157,11 +159,14 @@ export default function App() {
   const [activeTimer, setActiveTimer] = useState<{ taskId: string; categoryId: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [notification, setNotification] = useState<string | null>(null);
+  const [editingTimerId, setEditingTimerId] = useState<string | null>(null);
+  const [tempTimeVal, setTempTimeVal] = useState<string>('');
+
   const [appConfig, setAppConfig] = useState(() => {
     const saved = localStorage.getItem('daily-checkin-config');
     if (saved) return JSON.parse(saved);
     return {
-      title: '清新打卡助手',
+      title: '源源每日清单',
       tagline: '养成好习惯，每天进步一点点',
       routineLabels: {
         wakeUp: '起床时间',
@@ -211,6 +216,27 @@ export default function App() {
     const interval = setInterval(checkReminders, 60000); // Check every minute
     return () => clearInterval(interval);
   }, [log]);
+
+  const parseTimeToSeconds = (timeStr: string) => {
+    const parts = timeStr.trim().split(/[:\s]+/).map(p => parseInt(p) || 0);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    if (parts.length === 1) return parts[0] * 60;
+    return 0;
+  };
+
+  const saveManualTime = (categoryId: string, taskId: string, task: Task) => {
+    const seconds = parseTimeToSeconds(tempTimeVal);
+    if (task.timerMode === 'down') {
+      updateTask(categoryId, taskId, { 
+        remainingTime: seconds, 
+        countdownDuration: Math.floor(seconds / 60) || 1 
+      });
+    } else {
+      updateTask(categoryId, taskId, { timeSpent: seconds });
+    }
+    setEditingTimerId(null);
+  };
 
   const calculateProgress = () => {
     const allTasks = log.categories.flatMap(c => c.tasks);
@@ -307,6 +333,22 @@ export default function App() {
           ? { ...cat, tasks: cat.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t) } 
           : cat
       )
+    }));
+  };
+
+  const moveTask = (categoryId: string, taskId: string, direction: 'up' | 'down') => {
+    setLog(prev => ({
+      ...prev,
+      categories: prev.categories.map(cat => {
+        if (cat.id !== categoryId) return cat;
+        const index = cat.tasks.findIndex(t => t.id === taskId);
+        if (index === -1) return cat;
+        const newTasks = [...cat.tasks];
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= newTasks.length) return cat;
+        [newTasks[index], newTasks[targetIndex]] = [newTasks[targetIndex], newTasks[index]];
+        return { ...cat, tasks: newTasks };
+      })
     }));
   };
 
@@ -459,8 +501,10 @@ export default function App() {
               style={{ backgroundColor: isSelected ? (log.themeColor || '#fb7185') : undefined }}
             >
               <span className="text-base mb-0.5">{d}</span>
-              {status === 'done' && <Check className="w-3 h-3 text-emerald-500 font-bold" />}
-              {status === 'pending' && <X className="w-3 h-3 text-red-500 font-bold" />}
+              <div className="absolute bottom-1.5 flex gap-0.5">
+                {status === 'done' && <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[4px]" />}
+                {status === 'pending' && <X className="w-3.5 h-3.5 text-red-500 stroke-[4px]" />}
+              </div>
             </button>
           );
         })}
@@ -765,35 +809,17 @@ export default function App() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-8 pb-12 mt-4 content-start">
+          <div className="flex flex-col gap-6 pb-12 mt-4">
             <AnimatePresence mode="popLayout">
-              {log.categories.find(c => c.id === activeCategory)?.tasks
-                .slice()
-                .sort((a, b) => {
-                  // Always put "专注力" tasks at the top
-                  const aIsFocus = a.title.includes('专注力');
-                  const bIsFocus = b.title.includes('专注力');
-                  if (aIsFocus && !bIsFocus) return -1;
-                  if (!aIsFocus && bIsFocus) return 1;
-                  
-                  // Pinned tasks next
-                  if (a.isPinned && !b.isPinned) return -1;
-                  if (!a.isPinned && b.isPinned) return 1;
-                  
-                  if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
-                  const qA = a.quadrant || 4;
-                  const qB = b.quadrant || 4;
-                  return qA - qB;
-                })
-                .map((task) => (
+              {log.categories.find(c => c.id === activeCategory)?.tasks.map((task) => (
                 <motion.div
                   key={task.id}
                   layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
                   className={cn(
-                    "bento-inner-card group relative p-4 md:p-5 overflow-hidden border border-black/[0.03] flex flex-col h-fit transition-all duration-500",
+                    "bento-inner-card group relative p-6 overflow-hidden border border-black/[0.03] transition-all duration-500",
                     activeTimer?.taskId === task.id && "timer-active ring-2 ring-brand-500/20"
                   )}
                 >
@@ -807,181 +833,143 @@ export default function App() {
                       />
                     </div>
                   )}
-                  <div className="flex items-start gap-4">
-                    <Checkbox 
-                      checked={task.status === 'done'} 
-                      onCheckedChange={() => {
-                        const newStatus = task.status === 'done' ? 'pending' : 'done';
-                        updateTask(activeCategory, task.id, { 
-                          status: newStatus,
-                          progress: newStatus === 'done' ? 100 : (task.progress === 100 ? 0 : task.progress)
-                        });
-                      }}
-                      className="w-8 h-8 rounded-xl mt-1.5 shrink-0 border-2"
-                    />
-                    <div className="flex-1 min-w-0 space-y-3">
-                      {/* Title and Top Row */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0 flex flex-col gap-2">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                               {activeTimer?.taskId === task.id ? (
-                                 <div className="flex items-center gap-2 shrink-0">
-                                   <div className="w-4 h-4 rounded-full bg-brand-500 flex items-center justify-center dot-pulse">
-                                     <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                                   </div>
-                                   <span className="text-[10px] font-black text-brand-600 animate-pulse tracking-widest uppercase">Timing</span>
-                                 </div>
-                               ) : (
-                                 <button 
-                                  onClick={() => updateTask(activeCategory, task.id, { isPinned: !task.isPinned })}
-                                  className={cn(
-                                    "shrink-0 transition-colors",
-                                    task.isPinned ? "text-amber-500" : "text-slate-300 hover:text-slate-400"
-                                  )}
-                                >
-                                  <Pin className={cn("w-4 h-4", task.isPinned && "fill-current")} />
-                                </button>
-                               )}
-                              <Input
-                                placeholder="任务名称..."
-                                value={task.title}
-                                onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
+                  <div className="flex flex-col gap-6">
+                    {/* Top Row: Title, Status, Priority, Actions */}
+                    <div className="flex items-center gap-4">
+                      <Checkbox 
+                        checked={task.status === 'done'} 
+                        onCheckedChange={() => {
+                          const newStatus = task.status === 'done' ? 'pending' : 'done';
+                          updateTask(activeCategory, task.id, { 
+                            status: newStatus,
+                            progress: newStatus === 'done' ? 100 : (task.progress === 100 ? 0 : task.progress)
+                          });
+                        }}
+                        className="w-8 h-8 rounded-xl shrink-0 border-2"
+                      />
+                      
+                      <div className="flex-1 flex flex-nowrap items-center gap-3 overflow-hidden">
+                        <div className="flex items-center gap-1 shrink-0">
+                          {activeTimer?.taskId === task.id ? (
+                            <div className="flex items-center gap-2 pr-2">
+                              <div className="w-4 h-4 rounded-full bg-brand-500 flex items-center justify-center dot-pulse">
+                                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                              </div>
+                              <span className="text-[10px] font-black text-brand-600 animate-pulse tracking-widest uppercase">Timing</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-lg">
+                              <button 
+                                onClick={() => updateTask(activeCategory, task.id, { isPinned: !task.isPinned })}
                                 className={cn(
-                                  "border-none bg-transparent p-0 h-auto font-black text-lg md:text-xl leading-[1.2] focus-visible:ring-0 font-cute flex-1 break-words whitespace-normal overflow-wrap-anywhere text-slate-900",
-                                  task.status === 'done' && "line-through text-slate-500"
+                                  "p-1 transition-colors rounded-md",
+                                  task.isPinned ? "text-amber-500 bg-amber-50" : "text-slate-300 hover:text-slate-400"
                                 )}
-                              />
-                            </div>
-                            <select
-                              className={cn(
-                                "rounded-xl px-2.5 py-1.5 text-[10px] font-black outline-none border-none cursor-pointer shadow-sm appearance-none shrink-0 uppercase tracking-widest h-fit",
-                                task.quadrant === 1 ? "bg-red-100 text-red-600" :
-                                task.quadrant === 2 ? "bg-amber-100 text-amber-600" :
-                                task.quadrant === 3 ? "bg-blue-100 text-blue-600" :
-                                "bg-slate-100 text-slate-500"
-                              )}
-                              value={task.quadrant || 4}
-                              onChange={(e) => updateTask(activeCategory, task.id, { quadrant: parseInt(e.target.value) as 1 | 2 | 3 | 4 })}
-                            >
-                              <option value={1}>重要·紧急</option>
-                              <option value={2}>重要·不紧急</option>
-                              <option value={3}>不重要·紧急</option>
-                              <option value={4}>不重要·不紧急</option>
-                            </select>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <div className="flex items-center gap-2 group/goal flex-1 min-w-0">
-                               <Target className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                               <Input
-                                 placeholder="设置本次目标 (如: 完成复习前三章)..."
-                                 value={task.goal || ''}
-                                 onChange={(e) => updateTask(activeCategory, task.id, { goal: e.target.value })}
-                                 className="border-none bg-transparent p-0 h-auto text-[11px] font-medium focus-visible:ring-0 text-slate-500 placeholder:text-slate-300 italic flex-1"
-                               />
-                            </div>
-                            
-                            <div className="flex items-center gap-1 bg-slate-100/50 hover:bg-slate-100 rounded-lg px-2 py-1 transition-colors">
-                              <Bell className={cn("w-3.5 h-3.5", task.isReminderActive ? "text-amber-500" : "text-slate-400")} />
-                              <Input 
-                                type="time"
-                                value={task.reminderTime || ''}
-                                onChange={(e) => updateTask(activeCategory, task.id, { reminderTime: e.target.value, isReminderActive: !!e.target.value })}
-                                className="border-none bg-transparent p-0 h-4 w-[65px] text-[10px] font-black focus-visible:ring-0 text-slate-900 cursor-pointer"
-                              />
-                            </div>
-                          </div>
-                          
-                          {/* Week Day Selector */}
-                          <div className="flex gap-1 overflow-x-auto no-scrollbar py-1">
-                            {weekDays.map((label, index) => {
-                              const isSelected = (task.days || []).includes(index);
-                              return (
-                                <button
-                                  key={index}
-                                  onClick={() => {
-                                    const currentDays = task.days || [];
-                                    const newDays = isSelected
-                                      ? currentDays.filter(d => d !== index)
-                                      : [...currentDays, index];
-                                    updateTask(activeCategory, task.id, { days: newDays.sort() });
-                                  }}
-                                  className={cn(
-                                    "w-7 h-7 rounded-lg text-[10px] font-black transition-all shrink-0",
-                                    isSelected 
-                                      ? "bg-brand-500 text-white shadow-sm scale-110" 
-                                      : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-                                  )}
-                                >
-                                  {label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={() => removeTask(activeCategory, task.id)} className="opacity-0 group-hover:opacity-100 w-10 h-10 shrink-0 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all">
-                          <Trash2 className="w-5 h-5" />
-                        </Button>
-                      </div>
-
-                      {/* Content Stacks */}
-                      <div className="space-y-4">
-                        {/* Unit Progress Card */}
-                        <div className="bg-slate-50 p-4 rounded-3xl space-y-4 border border-slate-200 shadow-sm">
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] px-1">
-                              <span>单元进度 ({task.completedUnits || 0}/{task.totalUnits || 1})</span>
-                              <span className="font-mono">{task.totalUnits ? Math.round((task.completedUnits || 0) / task.totalUnits * 100) : 0}%</span>
-                            </div>
-                            <Progress value={task.totalUnits ? (task.completedUnits || 0) / task.totalUnits * 100 : 0} className="h-3 rounded-full bg-white/50 [&>[data-slot=progress-indicator]]:bg-brand-500" />
-                          </div>
-
-                          <div className="flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl shadow-sm">
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-9 w-9 p-0 rounded-lg text-lg font-black"
-                                onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.max(0, (task.completedUnits || 0) - 1) })}
                               >
-                                -
-                              </Button>
-                              <span className="text-xl font-black w-8 text-center tabular-nums">{task.completedUnits || 0}</span>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-9 w-9 p-0 rounded-lg text-lg font-black"
-                                onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.min(task.totalUnits || 1, (task.completedUnits || 0) + 1) })}
-                              >
-                                +
-                              </Button>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-slate-800 uppercase">总计:</span>
-                              <Input 
-                                type="number" 
-                                className="h-10 w-14 text-center text-sm bg-white border-none shadow-sm font-black focus-visible:ring-0 rounded-xl"
-                                value={task.totalUnits || 1}
-                                onChange={(e) => updateTask(activeCategory, task.id, { totalUnits: Math.max(1, parseInt(e.target.value) || 1) })}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Overall Progress and Timer Card */}
-                        <div className="bg-slate-50 p-4 rounded-3xl space-y-6 border border-slate-200 shadow-sm">
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-3 px-1">
-                              <div className="w-1.5 h-7 rounded-full bg-brand-500/30" />
-                              <div className="flex justify-between items-center w-full">
-                                <span className="text-sm md:text-base font-black uppercase tracking-widest text-slate-900">整体掌握程度</span>
-                                <span className="text-xl font-mono font-black text-slate-900">{task.progress || 0}%</span>
+                                <Pin className={cn("w-3.5 h-3.5", task.isPinned && "fill-current")} />
+                              </button>
+                              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => moveTask(activeCategory, task.id, 'up')} className="p-0.5 text-slate-400 hover:text-brand-500"><ArrowUp className="w-3 h-3" /></button>
+                                <button onClick={() => moveTask(activeCategory, task.id, 'down')} className="p-0.5 text-slate-400 hover:text-brand-500"><ArrowDown className="w-3 h-3" /></button>
                               </div>
                             </div>
-                            <Progress value={task.progress || 0} className="h-4 rounded-full bg-white shadow-sm [&>[data-slot=progress-indicator]]:bg-brand-500" />
+                          )}
+                        </div>
+                        
+                        <Input
+                          placeholder="任务名称..."
+                          value={task.title}
+                          onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
+                          className={cn(
+                            "border-none bg-transparent p-0 h-auto font-black text-xl md:text-2xl focus-visible:ring-0 font-cute flex-1 min-w-0 break-words text-slate-900",
+                            task.status === 'done' && "line-through text-slate-500"
+                          )}
+                        />
+
+                        <select
+                          className={cn(
+                            "rounded-xl px-3 py-1.5 text-[10px] font-black outline-none border-none cursor-pointer shadow-sm appearance-none shrink-0 uppercase tracking-widest h-fit",
+                            task.quadrant === 1 ? "bg-red-100 text-red-600" :
+                            task.quadrant === 2 ? "bg-amber-100 text-amber-600" :
+                            task.quadrant === 3 ? "bg-blue-100 text-blue-600" :
+                            "bg-slate-100 text-slate-500"
+                          )}
+                          value={task.quadrant || 4}
+                          onChange={(e) => updateTask(activeCategory, task.id, { quadrant: parseInt(e.target.value) as 1 | 2 | 3 | 4 })}
+                        >
+                          <option value={1}>重要·紧急</option>
+                          <option value={2}>重要·不紧急</option>
+                          <option value={3}>不重要·紧急</option>
+                          <option value={4}>不重要·不紧急</option>
+                        </select>
+                      </div>
+
+                      <Button variant="ghost" size="icon" onClick={() => removeTask(activeCategory, task.id)} className="opacity-0 group-hover:opacity-100 w-10 h-10 shrink-0 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all">
+                        <Trash2 className="w-5 h-5" />
+                      </Button>
+                    </div>
+
+                    {/* Middle Section: Metrics Pillars (扁平式拉宽) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch bg-slate-50/50 p-6 rounded-[32px] border border-slate-100">
+                      {/* Left Section: Unit Progress */}
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-end px-1">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">单元进度</span>
+                            <span className="text-2xl font-black text-slate-900 tabular-nums">
+                              {task.completedUnits || 0}<span className="text-slate-300 mx-1">/</span>{task.totalUnits || 1}
+                            </span>
                           </div>
-                          
+                          <div className="text-right">
+                            <span className="text-lg font-mono font-black text-brand-500">
+                              {task.totalUnits ? Math.round((task.completedUnits || 0) / task.totalUnits * 100) : 0}%
+                            </span>
+                          </div>
+                        </div>
+                        <Progress value={task.totalUnits ? (task.completedUnits || 0) / task.totalUnits * 100 : 0} className="h-3 rounded-full bg-white shadow-inner [&>[data-slot=progress-indicator]]:bg-brand-500" />
+                        
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-8 w-8 p-0 rounded-lg text-lg font-black text-slate-400 hover:text-brand-500"
+                              onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.max(0, (task.completedUnits || 0) - 1) })}
+                            > - </Button>
+                            <span className="text-base font-black w-8 text-center tabular-nums text-slate-700">{task.completedUnits || 0}</span>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-8 w-8 p-0 rounded-lg text-lg font-black text-slate-400 hover:text-brand-500"
+                              onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.min(task.totalUnits || 1, (task.completedUnits || 0) + 1) })}
+                            > + </Button>
+                          </div>
+                          <div className="flex items-center gap-2 ml-auto">
+                            <span className="text-[10px] font-black text-slate-400 uppercase">总量</span>
+                            <Input 
+                              type="number" 
+                              className="h-9 w-16 text-center text-sm bg-white border border-slate-100 shadow-sm font-black focus-visible:ring-2 focus-visible:ring-brand-500/20 rounded-xl"
+                              value={task.totalUnits || 1}
+                              onChange={(e) => updateTask(activeCategory, task.id, { totalUnits: Math.max(1, parseInt(e.target.value) || 1) })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Section: Overall Mastery */}
+                      <div className="space-y-4 lg:border-l lg:border-slate-200 lg:pl-10">
+                        <div className="flex justify-between items-end px-1">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">整体掌握程度</span>
+                            <div className="flex items-center gap-2 text-brand-500 mt-1">
+                              <Target className="w-4 h-4" />
+                              <span className="text-sm font-black line-clamp-1 italic text-slate-600">{task.goal || '暂无详细目标'}</span>
+                            </div>
+                          </div>
+                          <span className="text-3xl font-mono font-black text-brand-600 tracking-tighter tabular-nums">{task.progress || 0}%</span>
+                        </div>
+                        
+                        <div className="space-y-6 pt-2">
                           <Slider
                             value={[task.progress || 0]}
                             max={100}
@@ -995,90 +983,151 @@ export default function App() {
                             }}
                             className="w-full [&>[data-slot=slider-range]]:bg-brand-500"
                           />
+                          <div className="flex justify-between text-[9px] font-black text-slate-300 uppercase tracking-widest px-1">
+                            <span>入门</span>
+                            <span>熟练</span>
+                            <span>精通</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="flex items-center justify-between gap-4 pt-4 border-t border-brand-200">
-                            <div className="flex flex-col">
-                              <span className="text-4xl font-mono font-black text-brand-600 tracking-tighter tabular-nums leading-none">
-                                {task.timerMode === 'down' ? formatTime(task.remainingTime || 0) : formatTime(task.timeSpent || 0)}
-                              </span>
-                              <span className="text-[9px] font-black text-brand-600/50 uppercase tracking-[0.3em] mt-2 ml-1">
-                                {task.timerMode === 'down' ? '剩余时长' : '累计用时'}
-                              </span>
+                    {/* Bottom Row: Additional Info & Timer */}
+                    <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-8 px-2">
+                      <div className="flex flex-1 flex-wrap items-center gap-6 min-w-0">
+                         {/* Goal Editor */}
+                         <div className="flex items-center gap-3 group/goal flex-1 min-w-[280px] bg-slate-100/30 px-3 py-2 rounded-2xl border border-slate-100 hover:bg-slate-100/50 transition-colors">
+                            <Edit3 className="w-4 h-4 text-slate-400 shrink-0" />
+                            <Input
+                              placeholder="更新本次学习/工作目标..."
+                              value={task.goal || ''}
+                              onChange={(e) => updateTask(activeCategory, task.id, { goal: e.target.value })}
+                              className="border-none bg-transparent p-0 h-auto text-sm font-medium focus-visible:ring-0 text-slate-600 placeholder:text-slate-300 italic flex-1"
+                            />
+                         </div>
+
+                         {/* Reminder & Weekdays Info */}
+                         <div className="flex items-center gap-6 shrink-0">
+                            <div className="flex items-center gap-2 bg-brand-50 px-3 py-2 rounded-2xl border border-brand-100 shadow-sm">
+                               <Bell className={cn("w-4 h-4", task.isReminderActive ? "text-brand-500 animate-bounce" : "text-brand-300")} />
+                               <Input 
+                                 type="time"
+                                 value={task.reminderTime || ''}
+                                 onChange={(e) => updateTask(activeCategory, task.id, { reminderTime: e.target.value, isReminderActive: !!e.target.value })}
+                                 className="border-none bg-transparent p-0 h-5 w-[75px] text-xs font-black focus-visible:ring-0 text-brand-600 cursor-pointer"
+                               />
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <Button 
-                                size="lg"
-                                variant="ghost"
-                                onClick={() => {
-                                  if (activeTimer?.taskId === task.id) {
-                                    handleTimerEnd();
-                                  } else {
-                                    setActiveTimer({ taskId: task.id, categoryId: activeCategory });
-                                  }
-                                }}
-                                className={cn(
-                                  "h-12 px-6 text-sm font-black uppercase rounded-2xl shadow-sm flex items-center gap-2 transition-transform active:scale-95 border-2",
-                                  activeTimer?.taskId === task.id 
-                                    ? "bg-sky-50 text-sky-600 border-sky-200" 
-                                    : "bg-white text-brand-600 border-brand-100"
-                                )}
-                              >
-                                {activeTimer?.taskId === task.id ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
-                                {activeTimer?.taskId === task.id ? '停止' : '开始'}
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                onClick={() => updateTask(activeCategory, task.id, { timeSpent: 0, remainingTime: (task.countdownDuration || 25) * 60 })} 
-                                className="h-12 w-12 rounded-2xl bg-white border-brand-100 text-brand-400 hover:text-brand-600 shadow-sm"
-                              >
-                                <RotateCcw className="w-5 h-5" />
-                              </Button>
+
+                            <div className="flex gap-1 bg-slate-100/50 p-1 rounded-xl">
+                               {weekDays.map((label, index) => {
+                                 const isSelected = (task.days || []).includes(index);
+                                 return (
+                                   <button
+                                     key={index}
+                                     onClick={() => {
+                                       const currentDays = task.days || [];
+                                       const newDays = isSelected ? currentDays.filter(d => d !== index) : [...currentDays, index].sort();
+                                       updateTask(activeCategory, task.id, { days: newDays });
+                                     }}
+                                     className={cn(
+                                       "w-7 h-7 rounded-lg text-[10px] font-black transition-all flex items-center justify-center",
+                                       isSelected 
+                                         ? "bg-brand-500 text-white shadow-md scale-110" 
+                                         : "text-slate-300 hover:text-brand-400"
+                                     )}
+                                   >
+                                     {label}
+                                   </button>
+                                 );
+                               })}
                             </div>
+                         </div>
+                      </div>
+
+                      {/* Timer Cluster */}
+                      <div className="flex items-center gap-8 pl-8 lg:border-l lg:border-slate-100 shrink-0">
+                        <div className="flex flex-col text-right">
+                          <div className="flex items-center justify-end gap-3">
+                             {task.timerMode === 'down' && activeTimer?.taskId !== task.id && (
+                               <div className="flex items-center gap-1.5 bg-brand-50 px-2 py-1 rounded-xl border border-brand-100 shadow-sm animate-in fade-in slide-in-from-right-2">
+                                 <span className="text-[9px] font-black text-brand-400 uppercase tracking-widest">设定</span>
+                                 <Input 
+                                   type="number" 
+                                   className="h-7 w-12 text-center text-xs bg-transparent border-none p-0 font-black focus-visible:ring-0 text-brand-600 tabular-nums"
+                                   value={task.countdownDuration || 25}
+                                   onChange={(e) => {
+                                     const mins = Math.max(1, parseInt(e.target.value) || 1);
+                                     updateTask(activeCategory, task.id, { 
+                                       countdownDuration: mins,
+                                       remainingTime: mins * 60
+                                     });
+                                   }}
+                                 />
+                                 <span className="text-[9px] font-black text-brand-400 uppercase">分</span>
+                               </div>
+                             )}
+                             
+                             {editingTimerId === task.id ? (
+                               <Input
+                                 autoFocus
+                                 className="h-10 w-32 text-right font-mono font-black border-2 border-brand-500 rounded-xl bg-white shadow-lg tabular-nums animate-in zoom-in-95 duration-200"
+                                 value={tempTimeVal}
+                                 onChange={e => setTempTimeVal(e.target.value)}
+                                 onBlur={() => saveManualTime(activeCategory, task.id, task)}
+                                 onKeyDown={e => e.key === 'Enter' && saveManualTime(activeCategory, task.id, task)}
+                                 placeholder="MM:SS"
+                               />
+                             ) : (
+                               <span 
+                                 onClick={() => {
+                                   if (!activeTimer) {
+                                     setEditingTimerId(task.id);
+                                     setTempTimeVal(task.timerMode === 'down' 
+                                       ? `${Math.floor((task.remainingTime || 0)/60)}:${String((task.remainingTime || 0) % 60).padStart(2, '0')}`
+                                       : `${Math.floor((task.timeSpent || 0)/60)}:${String((task.timeSpent || 0) % 60).padStart(2, '0')}`
+                                     );
+                                   }
+                                 }}
+                                 className="text-4xl font-mono font-black text-slate-900 leading-none tabular-nums tracking-tighter cursor-pointer hover:text-brand-500 hover:scale-105 transition-all duration-200 active:scale-95"
+                                 title="点击修改时长"
+                               >
+                                 {task.timerMode === 'down' ? formatTime(task.remainingTime || 0) : formatTime(task.timeSpent || 0)}
+                               </span>
+                             )}
+                          </div>
+                          
+                          <div className="flex items-center justify-end gap-2 mt-2">
+                             <div className="flex bg-slate-100/80 p-0.5 rounded-lg text-[8px] font-black uppercase">
+                                <button onClick={() => updateTask(activeCategory, task.id, { timerMode: 'up' })} className={cn("px-1.5 py-0.5 rounded-md", task.timerMode !== 'down' ? "bg-white text-brand-600 shadow-sm" : "text-slate-400")}>正计</button>
+                                <button onClick={() => updateTask(activeCategory, task.id, { timerMode: 'down' })} className={cn("px-1.5 py-0.5 rounded-md", task.timerMode === 'down' ? "bg-white text-brand-600 shadow-sm" : "text-slate-400")}>倒计</button>
+                             </div>
+                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                              {task.timerMode === 'down' ? '剩余时长' : '累计用时'}
+                             </span>
                           </div>
                         </div>
 
-                        {/* Mode Select Row */}
-                        <div className="flex flex-wrap items-center gap-6 px-1 pt-2">
-                          <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">计时模式</span>
-                            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                              <button
-                                onClick={() => updateTask(activeCategory, task.id, { timerMode: 'up' })}
-                                className={cn(
-                                  "px-3 py-1.5 text-[10px] font-black rounded-lg transition-all",
-                                  task.timerMode !== 'down' ? "bg-white text-brand-600 shadow-sm" : "bg-white/20 text-slate-900"
-                                )}
-                              >正计</button>
-                              <button
-                                onClick={() => updateTask(activeCategory, task.id, { timerMode: 'down' })}
-                                className={cn(
-                                  "px-3 py-1.5 text-[10px] font-black rounded-lg transition-all",
-                                  task.timerMode === 'down' ? "bg-white text-brand-600 shadow-sm" : "bg-white/20 text-slate-900"
-                                )}
-                              >倒计</button>
-                            </div>
-                          </div>
-                          {task.timerMode === 'down' && (
-                            <div className="flex items-center gap-3 border-l-2 border-dashed border-black/10 pl-6">
-                              <span className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em]">设定 (分)</span>
-                              <div className="flex items-center gap-2">
-                                <Input 
-                                  type="number" 
-                                  className="h-9 w-16 text-center text-sm bg-white border-none shadow-inner font-black focus-visible:ring-2 focus-visible:ring-brand-500 rounded-xl"
-                                  value={task.countdownDuration || 25}
-                                  onChange={(e) => {
-                                    const mins = Math.max(1, parseInt(e.target.value) || 1);
-                                    updateTask(activeCategory, task.id, { 
-                                      countdownDuration: mins,
-                                      remainingTime: mins * 60
-                                    });
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
+                        <div className="flex items-center gap-3">
+                           <Button 
+                            size="lg"
+                            onClick={() => activeTimer?.taskId === task.id ? handleTimerEnd() : setActiveTimer({ taskId: task.id, categoryId: activeCategory })}
+                            className={cn(
+                              "h-14 w-14 p-0 rounded-2xl shadow-xl flex items-center justify-center transition-all active:scale-90 border-2",
+                              activeTimer?.taskId === task.id 
+                                ? "bg-red-50 text-red-500 border-red-200 hover:bg-red-100" 
+                                : "bg-brand-500 text-white border-brand-400 hover:bg-brand-600 shadow-brand-500/20"
+                            )}
+                          >
+                            {activeTimer?.taskId === task.id ? <Pause className="w-7 h-7 fill-current" /> : <Play className="w-7 h-7 fill-current ml-1" />}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={() => window.confirm('确定要重置计时吗？') && updateTask(activeCategory, task.id, { timeSpent: 0, remainingTime: (task.countdownDuration || 25) * 60 })}
+                            className="h-10 w-10 rounded-xl border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-100 hover:border-slate-300 transition-all"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
                     </div>
