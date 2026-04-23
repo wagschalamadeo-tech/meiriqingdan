@@ -50,7 +50,8 @@ import {
   ListTodo,
   Pin,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  History
 } from 'lucide-react';
 import { Task, Category, DailyLog, Habit, AppTheme } from './types';
 import { cn } from './lib/utils';
@@ -244,6 +245,34 @@ export default function App() {
     const totalProgress = allTasks.reduce((acc, t) => acc + (t.progress || 0), 0);
     return Math.round(totalProgress / allTasks.length);
   };
+
+  const getYesterdayLog = () => {
+    const today = new Date(log.date);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const dateStr = yesterday.toISOString().split('T')[0];
+    const saved = localStorage.getItem(`daily-checkin-log-${dateStr}`);
+    if (saved) return JSON.parse(saved) as DailyLog;
+    return null;
+  };
+
+  const yesterdayLog = getYesterdayLog();
+
+  const [archiveDate, setArchiveDate] = useState(log.date);
+  const [archiveLog, setArchiveLog] = useState<DailyLog | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`daily-checkin-log-${archiveDate}`);
+    if (saved) {
+      try {
+        setArchiveLog(JSON.parse(saved));
+      } catch (e) {
+        setArchiveLog(null);
+      }
+    } else {
+      setArchiveLog(null);
+    }
+  }, [archiveDate]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -512,6 +541,69 @@ export default function App() {
     );
   };
 
+  const renderArchiveCalendar = () => {
+    const logDate = new Date(archiveDate);
+    const year = logDate.getFullYear();
+    const month = logDate.getMonth();
+    const selectedDay = logDate.getDate();
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startDay = firstDay === 0 ? 6 : firstDay - 1;
+    
+    const days = [];
+    for (let i = 0; i < startDay; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+
+    const getDayStatus = (day: number) => {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const saved = localStorage.getItem(`daily-checkin-log-${dateStr}`);
+      if (!saved) return null;
+      try {
+        const data = JSON.parse(saved) as DailyLog;
+        const allTasks = data.categories.flatMap(c => c.tasks);
+        if (allTasks.length === 0) return null;
+        const allDone = allTasks.every(t => t.status === 'done');
+        return allDone ? 'done' : 'pending';
+      } catch (e) {
+        return null;
+      }
+    };
+
+    return (
+      <div className="grid grid-cols-7 gap-2">
+        {weekDays.map(d => <div key={d} className="text-[10px] font-black text-slate-400 text-center py-2 uppercase tracking-tight">{d}</div>)}
+        {days.map((d, i) => {
+          const status = d ? getDayStatus(d) : null;
+          const isSelected = d === selectedDay;
+          return (
+            <button 
+              key={i} 
+              onClick={() => {
+                if (d) {
+                  const newDate = new Date(year, month, d);
+                  setArchiveDate(newDate.toISOString().split('T')[0]);
+                }
+              }}
+              className={cn(
+                "aspect-square flex flex-col items-center justify-center rounded-xl transition-all relative group text-sm",
+                !d && "pointer-events-none opacity-0",
+                isSelected ? "text-white font-bold shadow-md scale-105 z-10" : "hover:bg-slate-100 text-slate-600"
+              )}
+              style={{ backgroundColor: isSelected ? (log.themeColor || '#fb7185') : undefined }}
+            >
+              <span>{d}</span>
+              <div className="absolute bottom-1 flex gap-0.5 scale-75">
+                {status === 'done' && <Check className="w-3 h-3 text-emerald-500 stroke-[4px]" />}
+                {status === 'pending' && <X className="w-3 h-3 text-red-500 stroke-[4px]" />}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   const handleTimerEnd = () => {
     if (activeTimer) {
       const task = log.categories.find(c => c.id === activeTimer.categoryId)?.tasks.find(t => t.id === activeTimer.taskId);
@@ -528,6 +620,7 @@ export default function App() {
     { id: 'habits', name: '习惯统计', icon: <BarChart3 className="w-6 h-6" /> },
     { id: 'calendar', name: '日历进度', icon: <CalendarDays className="w-6 h-6" /> },
     { id: 'summary', name: '今日总结', icon: <FileText className="w-6 h-6" /> },
+    { id: 'archive', name: '每日总结', icon: <History className="w-6 h-6" /> },
   ];
 
   return (
@@ -1340,6 +1433,29 @@ export default function App() {
 
             {currentPage === 3 && (
               <>
+                {yesterdayLog && (
+                  <section className="col-span-12 glass-card p-8 bg-slate-50/50 border-dashed border-2 border-slate-200">
+                    <div className="flex items-center gap-3 mb-6">
+                      <History className="w-6 h-6 text-slate-400" />
+                      <h3 className="text-lg font-black uppercase tracking-[0.2em] text-slate-500 font-cute">昨日回顾 / Yesterday</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3">
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">昨日说明 / Notes</span>
+                        <p className="text-lg font-medium text-slate-600 font-cute leading-relaxed italic whitespace-pre-wrap">
+                          {yesterdayLog.notes || '当日无记录'}
+                        </p>
+                      </div>
+                      <div className="space-y-3">
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">昨日评语 / Comments</span>
+                        <p className="text-lg font-medium text-brand-500/70 font-cute leading-relaxed italic whitespace-pre-wrap">
+                          {yesterdayLog.comments || '当日无记录'}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
                 <section className="col-span-12 md:col-span-6 glass-card p-8 space-y-6">
           <h3 className="text-lg font-black uppercase tracking-[0.2em] text-slate-800 font-cute">说明 / Notes</h3>
           <Textarea
@@ -1450,6 +1566,246 @@ export default function App() {
           </div>
         </section>
       </>
+    )}
+
+    {currentPage === 4 && (
+      <div className="col-span-12 grid grid-cols-12 gap-8">
+        {/* Archive Calendar Side */}
+        <aside className="col-span-12 lg:col-span-4 glass-card p-6 h-fit bg-white/40 sticky top-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-black font-cute flex items-center gap-2 text-slate-800">
+               <History className="w-5 h-5 text-brand-500" />
+               每日汇总 <span className="text-slate-400 font-medium text-xs">/ Archive</span>
+            </h2>
+          </div>
+          <div className="bg-white/60 p-4 rounded-3xl border border-white/40 shadow-sm mb-6">
+            <div className="flex justify-between items-center mb-4 px-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full"
+                onClick={() => {
+                  const d = new Date(archiveDate);
+                  d.setMonth(d.getMonth() - 1);
+                  setArchiveDate(d.toISOString().split('T')[0]);
+                }}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="font-black text-slate-800 font-cute text-sm">
+                {new Date(archiveDate).toLocaleString('zh-CN', { year: 'numeric', month: 'long' })}
+              </span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full"
+                onClick={() => {
+                  const d = new Date(archiveDate);
+                  d.setMonth(d.getMonth() + 1);
+                  setArchiveDate(d.toISOString().split('T')[0]);
+                }}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+            {renderArchiveCalendar()}
+          </div>
+          <Button 
+            className="w-full rounded-2xl h-12 font-black gap-2 transition-all hover:scale-[1.02] active:scale-95 text-white shadow-lg"
+            onClick={() => {
+              const currentLogDate = new Date(log.date);
+              const targetArchiveDate = new Date(archiveDate);
+              const diffTime = targetArchiveDate.getTime() - currentLogDate.getTime();
+              const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
+              switchDate(diffDays);
+              setCurrentPage(0); // Jump to tasks of that day
+              setNotification(`已跳转到 ${archiveDate}`);
+              setTimeout(() => setNotification(null), 3000);
+            }}
+            style={{ backgroundColor: log.themeColor || '#fb7185' }}
+          >
+            <RotateCcw className="w-5 h-5" />
+            查看详情
+          </Button>
+        </aside>
+
+        {/* Archive Content Side */}
+        <main className="col-span-12 lg:col-span-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {archiveLog ? (
+            <>
+              {/* Top Banner with Weather & Mastery */}
+              <div 
+                className="glass-card p-8 flex flex-col md:flex-row items-center justify-between gap-6 border-l-8 transition-colors"
+                style={{ borderLeftColor: archiveLog.themeColor || '#fb7185' }}
+              >
+                <div className="flex items-center gap-6">
+                  <div className="flex flex-col items-center p-4 bg-white/60 rounded-3xl border border-white/40 shadow-inner">
+                    <div className="text-brand-500 mb-2">
+                      {archiveLog.weather === 'sunny' && <Sun className="w-8 h-8" />}
+                      {archiveLog.weather === 'cloudy' && <Cloud className="w-8 h-8" />}
+                      {archiveLog.weather === 'rainy' && <CloudRain className="w-8 h-8" />}
+                    </div>
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">
+                      {archiveLog.weather === 'sunny' ? '晴朗' : archiveLog.weather === 'cloudy' ? '多云' : '雨天'}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-black font-cute text-slate-800 mb-2">
+                      {new Date(archiveDate).toLocaleDateString('zh-CN', { weekday: 'long' })}
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: archiveLog.themeColor || '#fb7185' }} />
+                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                        主题色: <span style={{ color: archiveLog.themeColor || '#fb7185' }}>{archiveLog.themeColor || '默认粉色'}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-8">
+                  <div className="text-center">
+                    <p className="text-3xl font-black text-slate-800">
+                      {archiveLog.categories.flatMap(c => c.tasks).filter(t => t.status === 'done').length}
+                      <span className="text-slate-300 mx-1">/</span>
+                      {archiveLog.categories.flatMap(c => c.tasks).length}
+                    </p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">任务完成度</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-3xl font-black text-brand-500">
+                      {Math.round(
+                        (archiveLog.categories.flatMap(c => c.tasks).filter(t => t.status === 'done').length / 
+                        (archiveLog.categories.flatMap(c => c.tasks).length || 1)) * 100
+                      )}%
+                    </p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">总体掌握度</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass-card p-8 bg-brand-500/5 group">
+                <div className="flex items-center gap-3 mb-6">
+                  <FileText className="w-6 h-6" style={{ color: archiveLog.themeColor || '#fb7185' }} />
+                  <h3 className="text-2xl font-black font-cute text-slate-800">当天收获与感悟</h3>
+                </div>
+                <div className="p-6 bg-white/40 rounded-[28px] border border-white/60 shadow-inner min-h-[120px]">
+                  <p className="text-xl text-slate-600 font-cute leading-relaxed whitespace-pre-wrap">
+                    {archiveLog.notes || '当日未填写说明'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Summary Ratings */}
+                <div className="glass-card p-8 border-t-4" style={{ borderTopColor: archiveLog.themeColor || '#fb7185' }}>
+                  <h4 className="text-lg font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2 text-sm">
+                    <Star className="w-4 h-4" style={{ color: archiveLog.themeColor || '#fb7185' }} /> 汇总评分
+                  </h4>
+                  <div className="space-y-6">
+                    {(Object.keys(archiveLog.ratings || {}) as Array<keyof DailyLog['ratings']>).map((key) => (
+                      <div key={key} className="flex items-center justify-between bg-white/40 p-4 rounded-2xl border border-white/60">
+                        <span className="font-bold text-slate-600">
+                          {key === 'efficiency' ? '效率' : key === 'handwriting' ? '书写' : '正确'}
+                        </span>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star 
+                              key={star} 
+                              className={cn("w-5 h-5", star <= (archiveLog.ratings?.[key] || 0) ? "fill-current" : "text-slate-200")} 
+                              style={{ color: star <= (archiveLog.ratings?.[key] || 0) ? (archiveLog.themeColor || '#fbbf24') : undefined }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Summary Routine */}
+                <div className="glass-card p-8 border-t-4" style={{ borderTopColor: archiveLog.themeColor || '#fb7185' }}>
+                  <h4 className="text-lg font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2 text-sm">
+                     <Clock className="w-4 h-4" style={{ color: archiveLog.themeColor || '#fb7185' }} /> 作息回顾
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-white/40 rounded-2xl border border-white/60">
+                      <div className="flex items-center gap-3">
+                        <Sunrise className="w-6 h-6 text-amber-500" />
+                        <span className="font-bold text-slate-600 text-sm">{appConfig.routineLabels.wakeUp}</span>
+                      </div>
+                      <span className="text-2xl font-black font-mono text-slate-800">{archiveLog.wakeUpTime || '--:--'}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-white/40 rounded-2xl border border-white/60">
+                      <div className="flex items-center gap-3">
+                        <Moon className="w-6 h-6 text-indigo-500" />
+                        <span className="font-bold text-slate-600 text-sm">{appConfig.routineLabels.sleep}</span>
+                      </div>
+                      <span className="text-2xl font-black font-mono text-slate-800">{archiveLog.sleepTime || '--:--'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Task Review Section */}
+              <div className="glass-card p-8 bg-white/40 border-l-8" style={{ borderLeftColor: archiveLog.themeColor || '#fb7185' }}>
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-2xl font-black font-cute text-slate-800 flex items-center gap-3">
+                    <Target className="w-6 h-6" style={{ color: archiveLog.themeColor || '#fb7185' }} /> 任务清单回顾
+                  </h3>
+                  <div className="px-4 py-1 rounded-full bg-white/60 text-[10px] font-black uppercase tracking-wider text-slate-400 border border-white/40">
+                    Tasks Detail
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {archiveLog.categories.flatMap(c => c.tasks).map(task => (
+                    <div key={task.id} className="flex items-center justify-between p-4 bg-white/60 rounded-2xl border border-white/80 shadow-sm transition-all hover:bg-white/80">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-6 h-6 rounded-lg flex items-center justify-center",
+                          task.status === 'done' ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"
+                        )}>
+                          {task.status === 'done' ? <Check className="w-4 h-4" /> : <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+                        </div>
+                        <span className={cn(
+                          "text-sm font-bold font-cute",
+                          task.status === 'done' ? "text-slate-400 line-through" : "text-slate-700"
+                        )}>
+                          {task.title}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-black font-mono text-slate-400">
+                        {Math.floor((task.timeSpent || 0) / 60)}m {(task.timeSpent || 0) % 60}s
+                      </span>
+                    </div>
+                  ))}
+                  {archiveLog.categories.flatMap(c => c.tasks).length === 0 && (
+                    <div className="col-span-2 py-12 text-center text-slate-400 font-cute italic">
+                      当日没有添加任何任务
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="glass-card p-8 border-t-8" style={{ backgroundColor: `${archiveLog.themeColor}08` || 'rgba(251, 113, 133, 0.05)', borderTopColor: archiveLog.themeColor || '#fb7185' }}>
+                <div className="flex items-center gap-3 mb-6">
+                   <Eraser className="w-6 h-6" style={{ color: archiveLog.themeColor || '#fb7185' }} />
+                   <h3 className="text-2xl font-black font-cute text-slate-800">评语与寄语</h3>
+                </div>
+                <div className="p-6 bg-white/60 rounded-[28px] border border-white shadow-sm min-h-[100px]">
+                  <p className="text-xl font-cute leading-relaxed whitespace-pre-wrap italic" style={{ color: archiveLog.themeColor || '#fb7185', opacity: 0.8 }}>
+                    {archiveLog.comments || '暂无评语'}
+                  </p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="h-[400px] flex flex-col items-center justify-center text-slate-400 glass-card">
+              <History className="w-16 h-16 opacity-20 mb-4 animate-pulse" />
+              <p className="text-xl font-black font-cute tracking-widest uppercase opacity-40">该日尚无记录数据</p>
+              <p className="text-sm font-medium mt-2 opacity-30">请在日历中选择曾打卡过的日期</p>
+            </div>
+          )}
+        </main>
+      </div>
     )}
   </motion.div>
 </AnimatePresence>
