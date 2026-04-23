@@ -1760,10 +1760,10 @@ export default function App() {
                     <div key={task.id} className="flex items-center justify-between p-4 bg-white/60 rounded-2xl border border-white/80 shadow-sm transition-all hover:bg-white/80">
                       <div className="flex items-center gap-3">
                         <div className={cn(
-                          "w-6 h-6 rounded-lg flex items-center justify-center",
-                          task.status === 'done' ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"
+                          "w-6 h-6 rounded-lg flex items-center justify-center transition-colors",
+                          task.status === 'done' ? "bg-emerald-500 text-white" : "bg-rose-500 text-white shadow-sm"
                         )}>
-                          {task.status === 'done' ? <Check className="w-4 h-4" /> : <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+                          {task.status === 'done' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                         </div>
                         <span className={cn(
                           "text-sm font-bold font-cute",
