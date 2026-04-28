@@ -66,9 +66,23 @@ import { Textarea } from './components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
 
 const INITIAL_CATEGORIES: Category[] = [
-  { id: 'cat-1', name: '语文', tasks: [] },
-  { id: 'cat-2', name: '数学', tasks: [] },
-  { id: 'cat-3', name: '英语', tasks: [] },
+  { id: 'cat-1', name: '语文', tasks: [
+    { id: 't1-1', title: '语基', status: 'pending', progress: 0, timeSpent: 0, quadrant: 2 },
+    { id: 't1-2', title: '仿写', status: 'pending', progress: 0, timeSpent: 0, quadrant: 2 },
+    { id: 't1-3', title: '精读', status: 'pending', progress: 0, timeSpent: 0, quadrant: 2 },
+    { id: 't1-4', title: '作文', status: 'pending', progress: 0, timeSpent: 0, quadrant: 2 },
+  ] },
+  { id: 'cat-2', name: '数学', tasks: [
+    { id: 't2-1', title: '计算', status: 'pending', progress: 0, timeSpent: 0, quadrant: 1 },
+    { id: 't2-2', title: '校内', status: 'pending', progress: 0, timeSpent: 0, quadrant: 2 },
+    { id: 't2-3', title: '校外', status: 'pending', progress: 0, timeSpent: 0, quadrant: 2 },
+  ] },
+  { id: 'cat-3', name: '英语', tasks: [
+    { id: 't3-1', title: '听', status: 'pending', progress: 0, timeSpent: 0, quadrant: 2 },
+    { id: 't3-2', title: '说', status: 'pending', progress: 0, timeSpent: 0, quadrant: 2 },
+    { id: 't3-3', title: '读', status: 'pending', progress: 0, timeSpent: 0, quadrant: 2 },
+    { id: 't3-4', title: '写', status: 'pending', progress: 0, timeSpent: 0, quadrant: 2 },
+  ] },
   { id: 'cat-4', name: '纪录片', tasks: [] },
   { id: 'cat-5', name: '英语动画片', tasks: [] },
   { id: 'cat-6', name: '其他', tasks: [] },
@@ -630,12 +644,16 @@ export default function App() {
         isEyeCare && "eyecare"
       )}
       style={{ 
-        backgroundColor: log.themeColor ? `${log.themeColor}55` : '#f1f5f9',
-        backgroundImage: log.backgroundImage ? `url(${log.backgroundImage})` : undefined,
-        '--color-brand-500': log.themeColor || '#0ea5e9',
-        '--color-brand-600': log.themeColor || '#0284c7',
-        '--color-bento-accent': log.themeColor || '#0ea5e9',
-        '--primary': log.themeColor || '#0ea5e9'
+        backgroundColor: (currentPage === 4 && archiveLog) 
+          ? (archiveLog.themeColor ? `${archiveLog.themeColor}55` : '#f1f5f9') 
+          : (log.themeColor ? `${log.themeColor}55` : '#f1f5f9'),
+        backgroundImage: (currentPage === 4 && archiveLog) 
+          ? (archiveLog.backgroundImage ? `url(${archiveLog.backgroundImage})` : undefined)
+          : (log.backgroundImage ? `url(${log.backgroundImage})` : undefined),
+        '--color-brand-500': ((currentPage === 4 && archiveLog) ? archiveLog.themeColor : log.themeColor) || '#0ea5e9',
+        '--color-brand-600': ((currentPage === 4 && archiveLog) ? archiveLog.themeColor : log.themeColor) || '#0284c7',
+        '--color-bento-accent': ((currentPage === 4 && archiveLog) ? archiveLog.themeColor : log.themeColor) || '#0ea5e9',
+        '--primary': ((currentPage === 4 && archiveLog) ? archiveLog.themeColor : log.themeColor) || '#0ea5e9'
       } as any}
     >
       <div className="bg-slate-900/5 fixed inset-0 pointer-events-none" /> {/* Subtle overlay for better contrast when background is very light */}
@@ -904,7 +922,13 @@ export default function App() {
 
           <div className="flex flex-col gap-6 pb-12 mt-4">
             <AnimatePresence mode="popLayout">
-              {log.categories.find(c => c.id === activeCategory)?.tasks.map((task) => (
+              {([...(log.categories.find(c => c.id === activeCategory)?.tasks || [])].sort((a, b) => {
+                const aDone = a.status === 'done' || (a.progress || 0) >= 100;
+                const bDone = b.status === 'done' || (b.progress || 0) >= 100;
+                if (!aDone && bDone) return -1;
+                if (aDone && !bDone) return 1;
+                return 0;
+              })).map((task) => (
                 <motion.div
                   key={task.id}
                   layout
@@ -975,9 +999,15 @@ export default function App() {
                           onChange={(e) => updateTask(activeCategory, task.id, { title: e.target.value })}
                           className={cn(
                             "border-none bg-transparent p-0 h-auto font-black text-xl md:text-2xl focus-visible:ring-0 font-cute flex-1 min-w-0 break-words text-slate-900",
-                            task.status === 'done' && "line-through text-slate-500"
+                            (task.status === 'done' || (task.progress || 0) >= 100) && "line-through text-slate-500"
                           )}
                         />
+
+                        {(task.status === 'done' || (task.progress || 0) >= 100) && (
+                          <div className="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-widest shrink-0 shadow-sm border border-emerald-200">
+                            已完成
+                          </div>
+                        )}
 
                         <select
                           className={cn(
@@ -1027,14 +1057,30 @@ export default function App() {
                               size="sm" 
                               variant="ghost" 
                               className="h-8 w-8 p-0 rounded-lg text-lg font-black text-slate-400 hover:text-brand-500"
-                              onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.max(0, (task.completedUnits || 0) - 1) })}
+                              onClick={() => {
+                                const newUnits = Math.max(0, (task.completedUnits || 0) - 1);
+                                const newProgress = Math.round((newUnits / (task.totalUnits || 1)) * 100);
+                                updateTask(activeCategory, task.id, { 
+                                  completedUnits: newUnits,
+                                  progress: newProgress,
+                                  status: newProgress === 100 ? 'done' : 'pending'
+                                });
+                              }}
                             > - </Button>
                             <span className="text-base font-black w-8 text-center tabular-nums text-slate-700">{task.completedUnits || 0}</span>
                             <Button 
                               size="sm" 
                               variant="ghost" 
                               className="h-8 w-8 p-0 rounded-lg text-lg font-black text-slate-400 hover:text-brand-500"
-                              onClick={() => updateTask(activeCategory, task.id, { completedUnits: Math.min(task.totalUnits || 1, (task.completedUnits || 0) + 1) })}
+                              onClick={() => {
+                                const newUnits = Math.min(task.totalUnits || 1, (task.completedUnits || 0) + 1);
+                                const newProgress = Math.round((newUnits / (task.totalUnits || 1)) * 100);
+                                updateTask(activeCategory, task.id, { 
+                                  completedUnits: newUnits,
+                                  progress: newProgress,
+                                  status: newProgress === 100 ? 'done' : 'pending'
+                                });
+                              }}
                             > + </Button>
                           </div>
                           <div className="flex items-center gap-2 ml-auto">
@@ -1071,7 +1117,8 @@ export default function App() {
                               const progress = Array.isArray(val) ? val[0] : val;
                               updateTask(activeCategory, task.id, { 
                                 progress,
-                                status: progress === 100 ? 'done' : 'pending'
+                                status: progress === 100 ? 'done' : 'pending',
+                                completedUnits: progress === 100 ? (task.totalUnits || 1) : task.completedUnits
                               });
                             }}
                             className="w-full [&>[data-slot=slider-range]]:bg-brand-500"
@@ -1721,6 +1768,40 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* Habits Review */}
+                <div className="glass-card p-8 border-t-4" style={{ borderTopColor: archiveLog.themeColor || '#fb7185' }}>
+                  <h4 className="text-lg font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2 text-sm">
+                    <Zap className="w-4 h-4" style={{ color: archiveLog.themeColor || '#fb7185' }} /> 习惯打卡
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {archiveLog.habits?.map((habit) => {
+                      const dayIndex = (new Date(archiveDate).getDay() || 7) - 1;
+                      const isDone = habit.weeklyStatus[dayIndex];
+                      return (
+                        <div key={habit.id} className="flex items-center gap-3 p-3 bg-white/40 rounded-2xl border border-white/60 shadow-sm">
+                          <div 
+                            className={cn(
+                              "w-8 h-8 rounded-xl flex items-center justify-center text-white transition-all shadow-sm",
+                              isDone ? "scale-100" : "scale-90 opacity-40 grayscale"
+                            )}
+                            style={{ backgroundColor: habit.color }}
+                          >
+                            {getHabitIcon(habit.icon)}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-700">{habit.name}</span>
+                            <span className={cn("text-[10px] font-black uppercase tracking-widest", isDone ? "text-emerald-500" : "text-slate-300")}>
+                              {isDone ? 'COMPLETED' : 'PENDING'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Summary Routine */}
                 <div className="glass-card p-8 border-t-4" style={{ borderTopColor: archiveLog.themeColor || '#fb7185' }}>
                   <h4 className="text-lg font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2 text-sm">
@@ -1756,7 +1837,13 @@ export default function App() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {archiveLog.categories.flatMap(c => c.tasks).map(task => (
+                  {archiveLog.categories.flatMap(c => c.tasks).sort((a, b) => {
+                    const aDone = a.status === 'done' || (a.progress || 0) >= 100;
+                    const bDone = b.status === 'done' || (b.progress || 0) >= 100;
+                    if (!aDone && bDone) return -1;
+                    if (aDone && !bDone) return 1;
+                    return 0;
+                  }).map(task => (
                     <div key={task.id} className="flex items-center justify-between p-4 bg-white/60 rounded-2xl border border-white/80 shadow-sm transition-all hover:bg-white/80">
                       <div className="flex items-center gap-3">
                         <div className={cn(
@@ -1765,12 +1852,19 @@ export default function App() {
                         )}>
                           {task.status === 'done' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                         </div>
-                        <span className={cn(
-                          "text-sm font-bold font-cute",
-                          task.status === 'done' ? "text-slate-400 line-through" : "text-slate-700"
-                        )}>
-                          {task.title}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className={cn(
+                            "text-sm font-bold font-cute",
+                            task.status === 'done' ? "text-slate-400 line-through" : "text-slate-700"
+                          )}>
+                            {task.title}
+                          </span>
+                          {task.goal && (
+                            <span className="text-[10px] text-slate-400 font-medium italic mt-0.5">
+                              目标: {task.goal}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <span className="text-[10px] font-black font-mono text-slate-400">
                         {Math.floor((task.timeSpent || 0) / 60)}m {(task.timeSpent || 0) % 60}s
